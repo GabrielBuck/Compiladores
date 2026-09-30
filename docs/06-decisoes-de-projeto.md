@@ -17,3 +17,9 @@
 **DecisÃ£o:** Arquivo Ãºnico `compilador.c`.
 **Justificativa:** O professor recomendou arquivo Ãºnico para facilidade de compilaÃ§Ã£o com o comando simples exigido.
 **Impacto:** O arquivo `compilador.c` poderÃ¡ crescer, exigindo rÃ­gida organizaÃ§Ã£o interna e uso de protÃ³tipos de funÃ§Ãµes no topo.
+
+## DEC-003: Validação baseada em evidência
+**Problema:** Resultados presumidos podem esconder erros de compilação ou execução.
+**Decisão:** Nenhuma funcionalidade será marcada como concluída ou validada sem comando executado e resultado observado.
+**Justificativa:** O projeto será avaliado por compilação e execução reais usando GCC/MinGW.
+**Impacto:** Relatórios de desenvolvimento deverão distinguir claramente: planejado, implementado, compilado e testado.

@@ -1,0 +1,5 @@
+compilador
+compilador.exe
+*.o
+*.obj
+*.exe

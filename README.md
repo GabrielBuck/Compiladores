@@ -10,15 +10,16 @@ do enunciado.
 
 ## Estado atual
 
-**Fase A (auditoria e requisitos), Fase A.1 (conferência contra o PDF oficial) e Fase B (especificação
-léxica) concluídas — somente documentação.** Não há analisador léxico, analisador sintático nem
-`compilador.c` neste momento. A próxima fase é a **C (Gramática Livre de Contexto)**.
+**Concluídas — somente documentação:** Fase A (auditoria e requisitos), Fase A.1 (conferência contra o
+PDF oficial), Fase B (especificação léxica) e Fase C (gramática). Não há analisador léxico, analisador
+sintático nem `compilador.c` neste momento. A próxima fase é a **D (FIRST/FOLLOW, nullable e validação
+LL(1))**.
 
 | Etapa do enunciado | Peso | Situação |
 |---|---|---|
-| 1 — ERs + GLC | 20% | **ERs: especificadas** (`docs/especificacao-lexica.md`). **GLC: ainda não iniciada** (Fase C) |
+| 1 — ERs + GLC | 20% | **ERs: concluídas documentalmente** (`docs/especificacao-lexica.md`). **GLC: concluída documentalmente** (`docs/gramatica.md`). **FIRST/FOLLOW: pendente** (Fase D) |
 | 2 — Analisador léxico | 40% | **não implementado** (especificação pronta; implementação na Fase F) |
-| 3 — Analisador sintático | 40% | **não implementado** (Fase G) |
+| 3 — Analisador sintático | 40% | **não implementado** (gramática pronta; implementação na Fase G) |
 
 ## Abordagem (decisões do grupo)
 
@@ -32,6 +33,8 @@ léxica) concluídas — somente documentação.** Não há analisador léxico, 
   **ainda não está decidido** (`AMB-13`).
 - Léxico case-sensitive; 50 nomes de token; `<` e `>` isolados e `.` isolado são erro léxico
   (`DEC-13`, `DEC-16`, `DEC-24`).
+- Gramática: sub-rotinas antes do principal (`DEC-28`); `OU` aceito no mesmo nível de `E`
+  (`DEC-31`, `DEC-32`); sem subtração, `-` só em `passo -2` (`DEC-33`, `DEC-34`).
 
 ## Compilação e execução (quando houver código)
 
@@ -50,10 +53,12 @@ O nome do arquivo MiniVisualg é sempre recebido por linha de comando.
 | [requisitos.md](docs/requisitos.md) | Requisitos rastreáveis, com origem (enunciado / aula / grupo). |
 | [especificacao-minivisualg.md](docs/especificacao-minivisualg.md) | Inventário do que o Anexo I confirma, menciona ou não cobre. |
 | [especificacao-lexica.md](docs/especificacao-lexica.md) | **Contrato léxico congelado (Fase B):** tokens, ERs, atributos, formato de saída, erros. |
+| [gramatica.md](docs/gramatica.md) | **GLC congelada (Fase C):** 91 produções em BNF, sem recursão à esquerda, fatorada; cobertura do Anexo I; derivações manuais. |
 | [decisoes.md](docs/decisoes.md) | Decisões do grupo e ambiguidades do material em aberto. |
 | [plano.md](docs/plano.md) | Fases A–J e critérios de saída. |
 
-Previstos nas próximas fases: `gramatica.md`, `arquitetura.md`, `testes.md`.
+Previstos nas próximas fases: FIRST/FOLLOW (Fase D, em `gramatica.md` ou documento próprio),
+`arquitetura.md`, `testes.md`.
 
 ## Política de branches
 

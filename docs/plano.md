@@ -8,7 +8,7 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 | A | Auditoria do repositório + requisitos — **CONCLUÍDA** | `docs/` iniciais, README, readme.txt | — |
 | A.1 | Conferência contra o PDF oficial — **CONCLUÍDA** após o commit desta fase | correções factuais em `docs/`, README, readme.txt | — |
 | B | Especificação lexical formal — **CONCLUÍDA** | `docs/especificacao-lexica.md` (ERs, tokens, atributos, formato de saída) | 1 (20%) |
-| C | Gramática Livre de Contexto | `docs/gramatica.md` | 1 (20%) |
+| C | Gramática Livre de Contexto — **CONCLUÍDA** | `docs/gramatica.md` | 1 (20%) |
 | D | FIRST / FOLLOW / nullable + verificação LL(1) | seção em `gramatica.md` | 1 → 3 |
 | E | Casos de teste derivados da gramática | `testes/` + `docs/testes.md` | 2 e 3 |
 | F | Analisador léxico | `obterToken()`, TS, saída tela/arquivo | 2 (40%) |
@@ -59,22 +59,24 @@ Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Conte
   AMB-13, AMB-14.
 - **Fora do escopo cumprido:** nenhum código C, nenhum scanner, nenhuma gramática.
 
-## Fase C — GLC  — PRÓXIMA
+## Fase C — GLC  — CONCLUÍDA
 
-- **Pré-requisito atendido:** o vocabulário léxico está congelado (`especificacao-lexica.md` §20) e **não
-  deve ser reinventado durante a GLC**. Terminais = os do §3; faltou um terminal → emenda ao contrato
-  na Fase B, não invenção na C.
-- **Entrada:** AMB-04 (aceitação sintática de `OU`), AMB-05 e AMB-06 (subtração binária) a decidir na C.
-  AMB-10 já está decidida (parênteses obrigatórios em `se`/`enquanto`, conservador). Declaração com
-  lista de IDs e atribuição/`leia` com elemento de vetor são requisitos confirmados da gramática.
-- **Conteúdo:** gramática derivando todas as expressões-teste de `especificacao-minivisualg.md` §5 e
-  todos os exemplos do Anexo I; sem produção para nada sem evidência.
-- **Critério de saída:** sem recursão à esquerda, fatorada, cada produção com comentário de origem.
+- **Saída:** `docs/gramatica.md` — 91 produções (P01–P91) em BNF, 50 não-terminais, os 49 terminais do
+  contrato léxico; `decisoes.md` com DEC-28…DEC-46.
+- **Critérios verificados:** GLC completa; sem recursão à esquerda (direta ou indireta); prefixos comuns
+  fatorados (comando por `ID`, primário por `ID`, procedimento com/sem parâmetros, listas, programa
+  com/sem rotinas); tabela produção → evidência; cobertura de todas as famílias do Anexo I (§13);
+  10 derivações manuais (§14); formas rejeitadas documentadas (§15).
+- **Resolvido:** AMB-04 (OU aceito, mesmo nível de E), AMB-05 (rotinas antes do principal; VAR
+  conservadora), AMB-06 (sem subtração; `MENOS` só no passo), AMB-09 (fatoração).
+- **Fora do escopo cumprido:** nenhum código C, nenhum parser/lexer, nenhuma tabela FIRST/FOLLOW.
 
-## Fase D — FIRST/FOLLOW e LL(1)
+## Fase D — FIRST/FOLLOW e LL(1)  — PRÓXIMA
 
-- Calcular nullable, FIRST, FOLLOW; montar a tabela preditiva; procurar conflitos.
-- **Ponto de atenção conhecido:** AMB-09 (comandos iniciados por ID).
+- Calcular nullable, FIRST, FOLLOW sobre P01–P91; montar a tabela preditiva; procurar conflitos.
+- **Pontos de atenção conhecidos:** `gramatica.md` §17 — primeiro `<cauda_comando_id>` e
+  `<cauda_primario>` (AMB-09), depois as caudas de expressão e o fim das listas de comandos.
+- Conflito encontrado → emenda registrada (nova DEC), nunca reescrita silenciosa da GLC.
 - **Critério de saída:** gramática LL(1) sem conflitos, ou conflitos resolvidos na gramática.
 
 ## Fase E — Testes derivados

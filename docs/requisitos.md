@@ -116,6 +116,20 @@ Somente referências. **As origens acima não foram alteradas**; as decisões da
 | REQ-32 (`nextToken()` → `obterToken()`) | §3.A, §16 — `TOKEN_EOF` como fronteira da interface (DEC-23) |
 | REQ-40 (expressões regulares) | §4 — ERs de ID, NUM_INT, NUM_REAL, STRING; §9 — comentário |
 
+## Rastreabilidade: requisito → gramática (Fase C)
+
+Somente referências; origens inalteradas. As decisões da Fase C são `GRUPO` (DEC-28 a DEC-46).
+
+| Requisito | Onde a Fase C o trata (`gramatica.md`) |
+|---|---|
+| REQ-03 (indentação sem significado) | §2, §8 — quebra de linha não separa comandos |
+| REQ-04 (só as estruturas do Anexo I) | §6.1 (produção → evidência), §13 (cobertura), §15 (rejeitadas) |
+| REQ-30 (análise descendente) | §1, §17 — sem recursão à esquerda, fatorada |
+| REQ-33 (preditivo LL(1), decisão do grupo) | §12 (fatoração), §17 (pontos para a Fase D) |
+| REQ-35 (sem semântica) | §16 — limitações sintáticas vs. semânticas |
+| REQ-41 (GLC) | §6 — P01–P91 |
+| REQ-42 (sem recursão à esquerda, fatorada; FIRST/FOLLOW) | §17 (auditoria feita); FIRST/FOLLOW na Fase D |
+
 ## Restrições de processo do grupo (todas as sessões)
 
 Origem: `GRUPO`.

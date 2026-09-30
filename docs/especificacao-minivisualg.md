@@ -10,6 +10,11 @@
 > (Variáveis, Operadores, Controle, Repetição, Vetores, Procedimentos, Funções), a evidência veio
 > dessa seção. Linhas sem seção citada continuam vindo do Contexto Mestre.
 > Regra do enunciado: só o que está nos exemplos existe. Nada vem do Visualg "de verdade".
+>
+> **Documentos normativos posteriores:** vocabulário em [`especificacao-lexica.md`](especificacao-lexica.md)
+> (Fase B); estrutura em [`gramatica.md`](gramatica.md) (Fase C), cuja §13 mostra a cobertura de cada
+> família abaixo. Os itens marcados AMBÍGUO aqui (estrutura de procedimentos, `var` ausente) foram
+> **decididos** na Fase C (DEC-28, DEC-29); este inventário fica como registro da evidência.
 
 ## Níveis de evidência
 

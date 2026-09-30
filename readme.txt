@@ -11,14 +11,14 @@ Integrantes:
 ------------------------------------------------------------
 [ATUALIZAR A CADA FASE]
 
-Situacao atual: FASE A (requisitos), FASE A.1 (conferencia com o PDF
-oficial) e FASE B (especificacao lexical) concluidas - SOMENTE DOCUMENTACAO.
+Situacao atual: FASES A, A.1, B (especificacao lexical) e C (gramatica)
+concluidas - SOMENTE DOCUMENTACAO.
 
-  Etapa 1 - Expressoes regulares ............... ESPECIFICADAS (docs/especificacao-lexica.md)
-  Etapa 1 - GLC ................................ NAO INICIADA
-  Especificacao lexical (Fase B) ............... CONCLUIDA (documentalmente)
-  Etapa 2 - Implementacao do analisador lexico . NAO INICIADA
-  Etapa 3 - Analisador sintatico (parser) ...... NAO INICIADO
+  Etapa 1 - Expressoes regulares ............... CONCLUIDAS (docs/especificacao-lexica.md)
+  Etapa 1 - GLC ................................ CONCLUIDA (docs/gramatica.md)
+  Etapa 1 - Validacao LL(1) / FIRST / FOLLOW ... PENDENTE (proxima fase)
+  Etapa 2 - Analisador lexico .................. NAO IMPLEMENTADO
+  Etapa 3 - Analisador sintatico ............... NAO IMPLEMENTADO
 
 Nao existe ainda codigo executavel (compilador.c).
 
@@ -50,4 +50,6 @@ Nenhum codigo implementado ate o momento.
 - Erro lexico ou sintatico encerra o processamento. O codigo de retorno do
   processo nesse caso ainda nao foi decidido (ponto a confirmar).
 - Analisador lexico sensivel a maiusculas/minusculas.
+- Gramatica: procedimentos/funcoes declarados antes de var/inicio; operador
+  OU aceito no mesmo nivel de E; sem subtracao ("-" so em "passo -2").
 - Detalhes e ambiguidades do material: docs/decisoes.md no repositorio.

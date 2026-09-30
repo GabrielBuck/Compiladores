@@ -254,6 +254,158 @@ marcadas "revisável" podem mudar se a professora esclarecer o contrário.
 - **Justificativa:** sem exemplo que exija; os 16 identificadores conhecidos casam (ver especificação
   léxica §4.1). (LEX-02)
 
+## Decisões da Fase C — gramática (DEC-28 a DEC-46)
+
+Todas são `GRUPO`. Produções citadas (`Pnn`) estão em `gramatica.md` §6. Nenhuma é atribuída à
+professora; as marcadas "revisável" podem mudar por instrução dela.
+
+## DEC-28 · Sub-rotinas antes do principal  — DECIDIDA (resolve AMB-05, com DEC-29)
+
+- **Problema:** a página de PROCEDIMENTOS do Anexo I intercala visualmente dois exemplos; não dá para
+  reproduzi-la literalmente.
+- **Alternativas:** (a) rotinas em qualquer posição; (b) rotinas entre `algoritmo` e `var`/`inicio`;
+  (c) copiar a disposição do slide.
+- **Decisão:** (b). Sub-rotinas, quando existem, ficam **depois de `ALGORITMO STRING`** e **antes de
+  `VAR`/`INICIO` principal** (P03).
+- **Justificativa:** cruza as duas evidências seguras: o comentário "Você os declara antes do início
+  principal do programa" e o formato das funções (`RotinasComRetorno`: `funcao` antes de `var`). **Não** é
+  afirmação sobre o Visualg completo.
+- **Impacto:** rotina depois de `var` é erro sintático.
+
+## DEC-29 · Seção `VAR` conservadora  — DECIDIDA (resolve AMB-05, com DEC-28)
+
+- **Problema:** tornar `var` simplesmente opcional aceitaria `algoritmo "X" inicio … fimalgoritmo`, forma
+  que não aparece nos exemplos comuns.
+- **Decisão:** `VAR` é **obrigatória** quando não há sub-rotina (P02) e **opcional** quando há ≥ 1 (P03,
+  P05/P06). Depois de `VAR`, zero ou mais declarações (P08/P09), o que cobre o `var` vazio do
+  `PrimeiroPasso`.
+- **Justificativa:** acomoda a página de procedimentos (sem `var` aparente) sem liberar a ausência de
+  `var` de forma indiscriminada.
+- **Impacto:** `algoritmo "X" inicio … fimalgoritmo` é rejeitado.
+
+## DEC-30 · Lista de rotinas  — DECIDIDA
+
+- **Decisão:** zero ou mais rotinas (uma ou mais no caminho P03); cada uma é procedimento ou função, em
+  qualquer ordem (P21–P24).
+- **Justificativa:** repetir as duas formas declarativas evidenciadas não cria construção nova. O Anexo I
+  **não** mostra um programa misturando procedimento e função; a alternativa "um tipo só por programa"
+  exigiria listas duplicadas sem base no material.
+
+## DEC-31 · `OU` aceito sintaticamente  — DECIDIDA (fecha AMB-04)
+
+- **Decisão:** `OU` é operador lógico da gramática (P71).
+- **Justificativa:** é definido textualmente pelo próprio Anexo I ("O OU, basta um ser verdadeiro") e já é
+  token (DEC-14); excluí-lo deixaria uma construção ensinada impossível sintaticamente. Não foi inventado
+  externamente.
+
+## DEC-32 · `E` e `OU` no mesmo nível  — DECIDIDA
+
+- **Decisão:** mesma precedência, na mesma cauda (P70/P71); expressões mistas seguem a ordem de leitura;
+  parênteses agrupam de outra forma.
+- **Justificativa:** o material não diz qual liga primeiro; **não** se inventa que `E` precede `OU`.
+
+## DEC-33 · Sem subtração binária  — DECIDIDA (fecha AMB-06)
+
+- **Decisão:** `MENOS` **não** aparece na gramática de expressões, nem binário (`a - b`) nem unário
+  (`-x`, `-1`). `<expr_aditiva_cauda>` só tem `MAIS`.
+- **Justificativa:** não há `n1 - n2` no Anexo I; não se completa por simetria com `+` (REQ-04).
+
+## DEC-34 · `MENOS` restrito ao passo  — DECIDIDA
+
+- **Decisão:** `<passo_opcional> -> PASSO <numero_passo> | ε`; `<numero_passo> -> NUM_INT | MENOS NUM_INT`
+  (P59–P62).
+- **Justificativa:** o **único** uso de `-` no Anexo I é `passo -2`. Aceita também o positivo natural
+  `passo 2`; rejeita `passo x`, `passo -x`, `passo 1.5`.
+
+## DEC-35 · Hierarquia de expressões  — DECIDIDA
+
+- **Decisão:** do mais baixo ao mais alto: lógico (`E`, `OU`) → relacional (`OP_REL`, **no máximo um**,
+  não encadeável) → aditivo (`MAIS`) → multiplicativo (`OP_MULT`) → primário (P68–P91).
+- **Justificativa:** `v MOD 2 = 0` sustenta `MOD` antes da relação; o restante é **decisão estrutural do
+  grupo** para uma GLC clara e preditiva, coerente com as categorias ensinadas. O Anexo I **não** prova a
+  tabela inteira.
+- **Impacto:** `a = b = c` é rejeitado.
+
+## DEC-36 · Fatoração do comando iniciado por `ID`  — DECIDIDA (resolve AMB-09 na gramática)
+
+- **Decisão:** `<cmd_id> -> ID <cauda_comando_id>`, com a cauda `ATRIBUICAO …` | `ABRE_COL … FECHA_COL
+  ATRIBUICAO …` | `ABRE_PAR … FECHA_PAR` | `ε` (P44–P48).
+- **Alternativa rejeitada:** quatro alternativas `<comando> -> ID …` (prefixo comum; não é LL(1)) ou
+  lookahead de 2 tokens (sairia de LL(1)).
+- **Impacto:** a forma `ε` faz qualquer `ID` isolado ter a forma de chamada sem parâmetros (limitação
+  sintática, `gramatica.md` §16). A verificação formal é da Fase D.
+
+## DEC-37 · Fatoração do primário iniciado por `ID`  — DECIDIDA
+
+- **Decisão:** `<primario> -> ID <cauda_primario>`, com `ABRE_COL … FECHA_COL` | `ABRE_PAR … FECHA_PAR` | `ε`
+  (P82, P89–P91). `leia` usa `<referencia> -> ID <indice_opcional>`, sem a forma de chamada.
+- **Justificativa:** mesmo motivo de DEC-36. As três caudas são separadas porque aceitam conjuntos
+  diferentes.
+
+## DEC-38 · `RETORNE` como comando geral  — DECIDIDA (ampliação assumida)
+
+- **Problema:** o Anexo I só mostra `retorne` dentro de função (inclusive dentro de `se` numa função).
+- **Alternativas:** (a) duplicar toda a família de blocos e comandos para funções; (b) aceitar `RETORNE`
+  onde qualquer comando é aceito.
+- **Decisão:** (b), P43/P64.
+- **Justificativa:** (a) dobraria a gramática só para uma restrição **contextual/semântica**.
+- **Impacto:** `retorne` no programa principal ou num procedimento é sintaticamente aceito. **Limitação
+  documentada**, não escondida (`gramatica.md` §10, §16).
+
+## DEC-39 · Listas de comandos não vazias  — DECIDIDA
+
+- **Decisão:** `<lista_comandos> -> <comando> <lista_comandos_cauda>` (≥ 1 comando) no principal, em `se`,
+  `senao`, `para`, `enquanto` e nas rotinas. Não existe comando vazio.
+- **Justificativa:** nenhum bloco vazio aparece no Anexo I.
+
+## DEC-40 · Função exige parâmetro; retorno é `<tipo_simples>`  — DECIDIDA
+
+- **Decisão:** `FUNCAO ID ABRE_PAR <lista_parametros> FECHA_PAR DOIS_PONTOS <tipo_simples> …` (P28).
+  `funcao f(): inteiro` é rejeitado.
+- **Justificativa:** as duas funções do Anexo I têm parâmetros. O retorno aceita os quatro tipos simples
+  (o Anexo I mostra `inteiro` e `logico`); restringir a esses dois criaria uma categoria de tipo
+  artificial.
+
+## DEC-41 · Procedimento sem parâmetros sem parênteses  — DECIDIDA
+
+- **Decisão:** declaração `PROCEDIMENTO ID <bloco> …` e chamada `ID` (P25, P27, P48). `procedimento p()` e
+  `p()` como chamada sem argumento são rejeitados.
+- **Justificativa:** o próprio Anexo I diz que procedimentos sem parâmetros não usam parênteses nem na
+  declaração nem na chamada.
+
+## DEC-42 · Limites de vetor só `NUM_INT`  — DECIDIDA
+
+- **Decisão:** `VETOR ABRE_COL NUM_INT INTERVALO NUM_INT FECHA_COL DE <tipo_simples>` (P16).
+- **Justificativa:** só há literais inteiros (`1..3`, `1..4`); `ID`, expressão, negativo ou real não têm
+  evidência.
+
+## DEC-43 · Limites de `para` como `<expressao>`  — DECIDIDA (revisável)
+
+- **Problema:** o Anexo I só usa literais (`1`, `5`, `10`, `0`) em `de … ate …`.
+- **Alternativas:** (a) `NUM_INT`; (b) `NUM_INT | ID`; (c) `<expressao>`.
+- **Decisão:** (c) (P58).
+- **Justificativa:** `de … ate …` recebe **valores**, e o valor na linguagem é a categoria `<expressao>`;
+  não cria token nem construção nova; não afeta LL(1). Limite negativo continua impossível (DEC-33).
+  A assimetria com o `passo` (DEC-34) é intencional: o passo é o único lugar onde o sinal aparece.
+- **Impacto:** `para i de 1 ate n faca` é aceito.
+
+## DEC-44 · Aridade de `leia`, `escreva`/`escreval` e chamadas  — DECIDIDA
+
+- **Decisão:** `leia` com **um** alvo (`ID` ou `ID[…]`) (P49–P52); `escreva`/`escreval` e chamadas com
+  **um ou mais** argumentos (P53, P54, P65–P67, P47, P90).
+- **Justificativa:** nenhum exemplo de `leia(a, b)`, `escreval()` ou chamada vazia.
+
+## DEC-45 · Parâmetro tipado simples  — DECIDIDA
+
+- **Decisão:** `<parametro> -> ID DOIS_PONTOS <tipo_simples>` (P32).
+- **Justificativa:** sem evidência de parâmetro sem tipo, vetor como parâmetro, referência ou valor padrão.
+
+## DEC-46 · `TOKEN_EOF` fora da GLC  — DECIDIDA
+
+- **Decisão:** a gramática termina em `FIMALGORITMO` (P01). Consumir `TOKEN_EOF` depois do programa é
+  detalhe do parser (Fase G); no FOLLOW (Fase D) ele entra só como o marcador `$`.
+- **Justificativa:** `TOKEN_EOF` não é lexema do programa (DEC-23).
+
 ---
 
 # Parte 2 — Ambiguidades do material
@@ -296,10 +448,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   com os do Anexo I (ver AMB-11).
 - **Impacto:** tabela de operadores; casos de teste de erro léxico. Decidir na Fase B.
 
-## AMB-04 · `OU` apenas mencionado — PARCIALMENTE DECIDIDA (léxico: Fase B, DEC-14; gramática: aberta para a Fase C)
+## AMB-04 · `OU` apenas mencionado — DECIDIDA (léxico: Fase B, DEC-14; gramática: Fase C, DEC-31/DEC-32)
 
 > **Resolução parcial (Fase B):** `OU` é **token reservado próprio** (`TOKEN_OU`), nunca ID, distinto de `E`.
-> **Continua aberto:** se `OU` é aceito numa expressão (decisão sintática, Fase C).
+> **Resolução final (Fase C):** `OU` é aceito como operador lógico, no mesmo nível de `E` (P70/P71).
 
 - **Problema:** o Anexo I (Operadores lógicos) traz os comentários "O E exige que os DOIS lados sejam
   verdadeiros" e "O OU, basta um ser verdadeiro", e usa `E` em `podeBrincar <- (idade >= 12) E (altura
@@ -311,7 +463,13 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Posição atual:** não transformar em ID silenciosamente. Decidir conscientemente na Fase B/C.
 - **Impacto:** gramática de expressões (nível lógico) e tabela de reservadas.
 
-## AMB-05 · Estrutura/posição dos procedimentos — EM ABERTO
+## AMB-05 · Estrutura/posição dos procedimentos — DECIDIDA na Fase C (DEC-28, DEC-29)
+
+> **Resolução (Fase C):** sub-rotinas (zero ou mais, procedimentos e funções) ficam depois de
+> `ALGORITMO STRING` e antes de `VAR`/`INICIO` principal; `VAR` é obrigatória sem sub-rotina e opcional
+> com sub-rotina. Respostas às perguntas abaixo: (1) `var` é opcional **só** quando há sub-rotina;
+> (2) sub-rotinas **só** antes de `var`; (3) sim, podem ser misturadas (DEC-30). Texto original
+> preservado abaixo como histórico.
 
 - **Problema:** a formatação dos slides mistura três exemplos; em um deles os procedimentos aparecem
   sem `var`, em outro após `algoritmo` e antes de `inicio`, e funções aparecem *antes* de `var`.
@@ -324,10 +482,11 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   resolver ainda**. Fica para a Fase C.
 - **Impacto:** símbolo inicial da GLC (Fase C).
 
-## AMB-06 · Sinal negativo vs. menos binário — PARCIALMENTE DECIDIDA (léxico: Fase B, DEC-15; subtração binária: aberta para a Fase C)
+## AMB-06 · Sinal negativo vs. menos binário — DECIDIDA (léxico: Fase B, DEC-15; gramática: Fase C, DEC-33/DEC-34)
 
 > **Resolução parcial (Fase B):** `-` é `TOKEN_MENOS`; número não tem sinal (`-2` = `MENOS` `NUM_INT(2)`).
-> **Continua aberto:** se a gramática aceita `-` binário (hoje SEM EVIDÊNCIA) e como trata a forma negativa.
+> **Resolução final (Fase C):** **sem** subtração binária e **sem** menos unário em expressão; `MENOS` só
+> aparece em `<numero_passo> -> MENOS NUM_INT` (P62).
 
 - **Problema:** `para i de 10 ate 0 passo -2 faca` (Anexo I — Repetição) confirma o caractere `-` e a
   forma negativa/unária. Não existe `n1 - n2` em nenhum exemplo.
@@ -364,7 +523,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Posição atual (provisória):** bytes ≥ 0x80 só dentro de string/comentário; ID segue ASCII.
 - **Impacto:** reconhecedores de STRING/comentário; testes com arquivos UTF-8 e ANSI.
 
-## AMB-09 · Comando iniciado por identificador (risco LL(1) antecipado) — EM ABERTO
+## AMB-09 · Comando iniciado por identificador (risco LL(1) antecipado) — RESOLVIDA na gramática (Fase C, DEC-36/DEC-37); confirmação formal na Fase D
+
+> **Resolução (Fase C):** fatoração `ID <cauda_comando_id>` (comando) e `ID <cauda_primario>` (expressão).
+> Nenhum conflito óbvio na análise qualitativa (`gramatica.md` §17); FIRST/FOLLOW formal fica para a Fase D.
 
 - **Problema:** atribuição (`x <- ...`), atribuição a vetor (`v[i] <- ...`) e chamada de procedimento
   (`linha_decorativa`, `mostrar_erro(...)`) **começam todos com ID**; chamada sem parênteses é
@@ -482,9 +644,11 @@ Itens que o material não resolve e que o grupo só decide por conta própria se
 | AMB-01 espaço entre lexemas | A contradição é do material; nosso tratamento técnico (DEC-05) aceita os dois estilos. |
 | AMB-02 case sensitivity | **Decidida (DEC-13, conservadora), revisável:** o material não diz; só muda se a professora esclarecer. |
 | AMB-03 `<` e `>` isolados | **Decidida no léxico (DEC-16), revisável:** sem exemplo; a Figura 2 sugere outra coisa (AMB-11). |
-| AMB-04 `OU` na gramática | Léxico decidido (DEC-14). Aceitação sintática: aberta (Fase C). |
-| AMB-05 estrutura de procedimentos | Página visualmente inconsistente. Totalmente aberta (Fase C). |
-| AMB-06 subtração binária | Léxico decidido (DEC-15). Subtração binária: sem exemplo; aberta (Fase C). |
+| AMB-04 `OU` na gramática | **Decidida (DEC-31/DEC-32):** aceito, no mesmo nível de `E`. Revisável se a professora restringir. |
+| AMB-05 estrutura de procedimentos | **Decidida (DEC-28/DEC-29)** por reconstrução; a página continua visualmente inconsistente. Boa candidata a confirmar com a professora. |
+| AMB-06 subtração binária | **Decidida (DEC-33/DEC-34):** sem subtração; `MENOS` só no passo. Revisável. |
+| DEC-38 `retorne` fora de função | Aceito sintaticamente (limitação contextual documentada). |
+| DEC-43 limites de `para` | `<expressao>` em vez de literal; revisável. |
 | AMB-07 árvore de derivação obrigatória? | Aulas pedem; enunciado não é claro (Fase G). |
 | AMB-10 parênteses em `se`/`enquanto` | Decidido de forma conservadora; revisável. |
 | AMB-11 seguir a Figura 2 literalmente? | **Resolvida (formato vs. vocabulário)**, revisável: o enunciado a apresenta como ilustrativa. |

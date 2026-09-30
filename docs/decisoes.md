@@ -72,7 +72,7 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
 - **Impacto:** a mesma rotina serve a entradas "com espaço" e "coladas". Precisa de 1–2 caracteres
   de lookahead de entrada (`<` vs `<-`/`<>`/`<=`; `.` vs `..`).
 
-## DEC-06 · Struct `Token` com `union` de atributo  — DECIDIDA (forma); campos PROVISÓRIOS até a Fase B
+## DEC-06 · Struct `Token` com `union` de atributo  — DECIDIDA (contrato conceitual fechado na Fase B; layout em memória na Fase F)
 
 - **Problema:** o enunciado exige um registro (`struct`) com campos de tipos diferentes (REQ-20 ✔PDF) e
   oferece na Figura 2 uma estrutura ilustrativa com tipo, linha e `union` de atributos (REQ-21 ✔PDF).
@@ -85,7 +85,9 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
   **GRUPO**.
 - **Justificativa:** a Figura 2 orienta o *formato*; os membros reais dependem dos tokens do MiniVisualg
   (ver AMB-11).
-- **Impacto:** os membros definitivos e a convenção "qual token tem atributo" saem na Fase B.
+- **Impacto (Fase B):** o contrato conceitual — campos `type`, `line`, `lexeme`, atributo por tipo — e a
+  convenção de quais tokens têm atributo estão fechados em `especificacao-lexica.md` §14–§15. O layout em
+  memória (union, buffers) fica para a Fase F.
 
 ## DEC-07 · Tabela de símbolos mínima  — DECIDIDA
 
@@ -101,19 +103,26 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
   `/* ... */` **não** é implementado.
 - **Justificativa:** o Anexo I só usa `//`; REQ-04 proíbe completar por analogia com C.
 
-## DEC-09 · String fechada na mesma linha  — PROVISÓRIA (confirmar na Fase B)
+## DEC-09 · String fechada na mesma linha  — DECIDIDA (confirmada na Fase B)
 
 - **Problema:** sem evidência de escapes ou strings multilinha.
 - **Decisão:** STRING = `"` … `"` sem quebra de linha. Aberta e sem fechar até `\n`/EOF → `ERRO LÉXICO`.
   Sem escapes. As aspas não geram token próprio.
 - **Impacto:** `"` dentro de string não é representável; aceitável porque não há exemplo que exija.
+- **Fase B:** ER `"[^"\r\n]*"`; conteúdo opaco; sem escapes; ver `especificacao-lexica.md` §4.5 (LEX-07).
 
-## DEC-10 · Erro encerra o processamento  — DECIDIDA
+## DEC-10 · Erro encerra o processamento  — DECIDIDA (sem fixar código de retorno)
 
-- **Decisão:** primeiro erro léxico ou sintático imprime a mensagem exigida e termina o processo
-  (código de retorno diferente de zero). Sem recuperação.
-- **Justificativa:** REQ-24 e REQ-31.
-- **Impacto:** o parser não precisa de sincronização; o teste de erro verifica mensagem + linha.
+- **Problema:** o que fazer ao encontrar erro léxico ou sintático.
+- **Decisão:** o **primeiro erro encerra imediatamente o processamento**, depois de apresentar a mensagem
+  exigida. Sem recuperação.
+- **O que NÃO está decidido:** o **código numérico de saída** do processo nesse caso. A versão anterior
+  deste item dizia "diferente de zero"; foi **retirada** por ser prematura (ver AMB-13). A questão será
+  resolvida nas Fases H/I.
+- **Justificativa:** REQ-24 e REQ-31 (encerrar). REQ-11 (retorno final adequado; penalização) impede
+  assumir por convenção `return 1`.
+- **Impacto:** o parser não precisa de sincronização; o teste de erro verifica mensagem + linha. O
+  critério de aprovação do teste de erro **não** inclui o exit status até a AMB-13 ser resolvida.
 
 ## DEC-11 · Derivação registrada sem AST  — PROVISÓRIA (Fase G)
 
@@ -128,6 +137,122 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
 - **Decisão:** manter `docs/` em Markdown no repositório e `documentacao.pdf` + `readme.txt` para a
   entrega. Cada regra do material recebe ID (`REQ-`, `AMB-`, `DEC-`) referenciado em código e testes.
 - **Impacto:** cadeia material → regra → código → teste verificável.
+
+## Decisões da Fase B — contrato léxico (DEC-13 a DEC-27)
+
+Todas são `GRUPO`. Detalhe e ERs em `especificacao-lexica.md`. Nenhuma é atribuída à professora; as
+marcadas "revisável" podem mudar se a professora esclarecer o contrário.
+
+## DEC-13 · Léxico case-sensitive  — DECIDIDA (Fase B; revisável)
+
+- **Problema:** o material não diz se `SE` = `se`, `Mod` = `MOD` (AMB-02).
+- **Alternativas:** case-sensitive; case-insensitive; misto.
+- **Decisão:** **case-sensitive em tudo.** Reservadas e operadores-palavra só na grafia do Anexo I
+  (`algoritmo`, `MOD`, `E`, `OU` …). `ALGORITMO`, `mod`, `e` são **IDs**. IDs também são sensíveis:
+  `nome` ≠ `Nome`.
+- **Justificativa:** o material não define caixa; o projeto manda seguir rigorosamente as estruturas
+  apresentadas; aceitar variações ampliaria silenciosamente o subconjunto (REQ-04).
+- **Impacto:** catálogo alfabético com comparação exata; testes `ALGORITMO`/`mod` → `ID`. (LEX-01)
+
+## DEC-14 · `OU` é token reservado próprio, distinto de `E`  — DECIDIDA (parte lexical de AMB-04)
+
+- **Problema:** `OU` é definido só em comentário do Anexo I; `E` é usado em expressão.
+- **Alternativas:** deixar `OU` virar ID; agrupar `E`/`OU` em uma classe; token próprio cada.
+- **Decisão:** `OU` é lexema **reservado**, nunca ID, com `TOKEN_OU`; `E` tem `TOKEN_E`. **Sem** agrupamento
+  em `TOKEN_OP_LOG`.
+- **Justificativa:** preserva a informação do material sem fingir evidência de uso executável; não obriga
+  o parser a aceitar ambos automaticamente.
+- **Impacto:** se `OU` entra na gramática é decisão **sintática da Fase C** (AMB-04 segue parcialmente
+  aberta). (LEX-14)
+
+## DEC-15 · `-` é `TOKEN_MENOS`; número não tem sinal  — DECIDIDA (parte lexical de AMB-06)
+
+- **Problema:** `passo -2` confirma `-` unário; não há `n1 - n2`.
+- **Decisão:** `-` é `TOKEN_MENOS`, separado de `TOKEN_MAIS` e de qualquer classe. `NUM_INT = [0-9]+`;
+  `-2` = `MENOS` `NUM_INT(2)`. A categoria lexical **não implica** subtração binária.
+- **Impacto:** subtração binária permanece SEM EVIDÊNCIA; a gramática (Fase C) trata a forma negativa e
+  decide sobre `-` binário. (AMB-06 segue parcialmente aberta.) (LEX-04)
+
+## DEC-16 · `<` e `>` isolados não são tokens  — DECIDIDA (AMB-03 no léxico; revisável)
+
+- **Problema:** só existem `<-`, `<>`, `<=`, `>=` no Anexo I.
+- **Decisão:** `<` só vale como `<-`, `<>` ou `<=`; `>` só como `>=`. Caso contrário, **erro léxico** na
+  sequência `<` ou `>`.
+- **Justificativa:** escopo conservador baseado no Anexo I; **não** é afirmação sobre o Visualg completo.
+- **Impacto:** `OP_REL` só tem `EQ NE LE GE`; sem `OP_LT`/`OP_GT`. (LEX-11)
+
+## DEC-17 · Nome impresso do identificador: `ID`  — DECIDIDA (AMB-12)
+
+- **Decisão:** nome textual `ID`; interno `TOKEN_ID`.
+- **Justificativa:** o enunciado usa `ID` e `IDENTIFICADOR` nos exemplos (ambos aceitáveis); `ID` é
+  conciso e coincide com a terminologia das aulas. **Não** se afirma que `IDENTIFICADOR` seria incorreto.
+
+## DEC-18 · Relacionais agrupados em `TOKEN_OP_REL` + atributo  — DECIDIDA
+
+- **Decisão:** `=` `<>` `<=` `>=` → `OP_REL` com atributo `EQ` `NE` `LE` `GE` (enum interno `OP_EQ`…).
+- **Justificativa:** coerente com a ideia de classe + atributo da Figura 2 (formato, não vocabulário;
+  AMB-11) e com os exemplos da disciplina; simplifica o parser.
+- **Impacto:** sem `LT`/`GT` (DEC-16).
+
+## DEC-19 · Multiplicativos agrupados em `TOKEN_OP_MULT` + atributo  — DECIDIDA
+
+- **Decisão:** `*` `/` `\` `MOD` → `OP_MULT` com atributo `MUL` `DIV_REAL` `DIV_INT` `MOD`.
+- **Justificativa:** na futura gramática os quatro ocupam o mesmo nível; a distinção fica no atributo.
+- **Impacto:** `MOD` não tem token próprio; é `OP_MULT` reconhecido pelo catálogo alfabético.
+
+## DEC-20 · Uma palavra reservada = um token; `leia/escreva/escreval` são reservadas  — DECIDIDA
+
+- **Decisão:** as 31 palavras reservadas têm **tipo de token próprio** (`TOKEN_KW_…`), sem atributo; **não**
+  existe `TOKEN_KEYWORD` único com atributo. `leia`, `escreva` e `escreval` **são reservadas** (não podem
+  ser IDs).
+- **Justificativa:** parser descendente legível (um `switch`/`if` por token); fecha a pendência de
+  `especificacao-minivisualg.md`.
+- **Impacto:** 31 + 19 demais = 50 nomes de token (§3 da especificação léxica).
+
+## DEC-21 · STRING preserva o valor textual  — DECIDIDA
+
+- **Decisão:** `TOKEN_STRING` carrega o texto literal; a listagem mostra `STRING | "Ana"`.
+- **Impacto:** o `Token` precisa guardar o texto; o layout de memória fica para a Fase F.
+
+## DEC-22 · Saída sem ` | atributo` para token sem atributo  — DECIDIDA (interpretação do grupo)
+
+- **Decisão:** formato `linha# NOME` quando não há atributo; `linha# NOME | atributo` quando há. Nunca
+  `| NULL`, `| NONE` ou `| 0`.
+- **Justificativa:** o enunciado diz "valores correspondentes, se necessário" (REQ-23 ✔PDF); a omissão
+  no caso sem atributo é **interpretação do grupo**, não texto do enunciado.
+
+## DEC-23 · `TOKEN_EOF` é interno e não é impresso  — DECIDIDA
+
+- **Decisão:** `TOKEN_EOF` participa da interface scanner/parser, mas não é átomo do arquivo-fonte e
+  não aparece na listagem de saída.
+
+## DEC-24 · Maximal munch e regra do ponto  — DECIDIDA
+
+- **Decisão:** o scanner devolve o lexema válido mais longo sem consumir o que é do próximo token. Depois
+  de dígitos: `.`+dígito → real; `..` → `INTERVALO`; outro `.` → inteiro termina e o `.` isolado é erro.
+  `.` só é válido como `..`.
+- **Impacto:** `vetor[1..4]` = `NUM_INT` `INTERVALO` `NUM_INT`. Exige olhar 2 caracteres adiante; mecanismo
+  na Fase F. (LEX-06, LEX-10)
+
+## DEC-25 · Whitespace e contagem de linhas  — DECIDIDA
+
+- **Decisão:** whitespace = espaço, tab, LF, CR. A linha incrementa **só em `\n`**; CRLF = uma quebra
+  lógica; CR isolado é whitespace e não conta. Linha do token = linha do primeiro caractere.
+- **Impacto:** OP-01 (teste CRLF) passa a ter regra explícita. (LEX-09)
+
+## DEC-26 · Formato e princípio da mensagem de erro léxico  — DECIDIDA (formato: proposta do grupo)
+
+- **Decisão:** `ERRO LÉXICO - linha <n> - sequência: <sequência>`; a sequência é a **menor** que identifica
+  o erro, sem lexemas válidos anteriores; em string não fechada, da aspa de abertura até o ponto de
+  detecção.
+- **Justificativa:** o enunciado exige os três dados; o formato numa linha é do grupo.
+- **Impacto:** onde imprimir e o exit status seguem abertos (AMB-13, AMB-14). (LEX-18)
+
+## DEC-27 · ER de ID: só ASCII, `_` não inicia  — DECIDIDA
+
+- **Decisão:** `ID = [A-Za-z][A-Za-z0-9_]*`; sem letras acentuadas nem `_` inicial.
+- **Justificativa:** sem exemplo que exija; os 16 identificadores conhecidos casam (ver especificação
+  léxica §4.1). (LEX-02)
 
 ---
 
@@ -147,7 +272,9 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   considerados válidos?* (assumimos sim).
 - **Impacto:** fixa o desenho do scanner (Fase F).
 
-## AMB-02 · Case sensitivity — EM ABERTO (uso provisório: lexemas exatamente como no Anexo I)
+## AMB-02 · Case sensitivity — DECIDIDA na Fase B (DEC-13; revisável se a professora esclarecer)
+
+> **Resolução (Fase B):** léxico case-sensitive. Texto original preservado abaixo como histórico.
 
 - **Problema:** o material não diz se `SE` = `se`, `Mod` = `MOD`.
 - **Alternativas:** case-sensitive; case-insensitive; misto (reservadas insensíveis, IDs sensíveis).
@@ -156,7 +283,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Risco anotado:** `E` é identificador válido pela ER candidata de ID; só a regra de prioridade
   de reservada o impede. Em case-insensitive, `e` também viraria operador lógico.
 
-## AMB-03 · `<` e `>` isolados — EM ABERTO (nada assumido)
+## AMB-03 · `<` e `>` isolados — DECIDIDA na Fase B para o léxico (DEC-16; revisável)
+
+> **Resolução (Fase B):** `<` e `>` isolados **não** são tokens; viram erro léxico. Só `<-`, `<>`, `<=`, `>=`.
+> Texto original preservado abaixo como histórico.
 
 - **Problema:** há `<-`, `<>`, `<=`, `>=`; não há exemplo de `<` ou `>` sozinhos.
 - **Alternativas:** (a) **não** aceitar → `ERRO LÉXICO` se aparecerem; (b) aceitar como relacionais.
@@ -166,7 +296,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   com os do Anexo I (ver AMB-11).
 - **Impacto:** tabela de operadores; casos de teste de erro léxico. Decidir na Fase B.
 
-## AMB-04 · `OU` apenas mencionado — EM ABERTO
+## AMB-04 · `OU` apenas mencionado — PARCIALMENTE DECIDIDA (léxico: Fase B, DEC-14; gramática: aberta para a Fase C)
+
+> **Resolução parcial (Fase B):** `OU` é **token reservado próprio** (`TOKEN_OU`), nunca ID, distinto de `E`.
+> **Continua aberto:** se `OU` é aceito numa expressão (decisão sintática, Fase C).
 
 - **Problema:** o Anexo I (Operadores lógicos) traz os comentários "O E exige que os DOIS lados sejam
   verdadeiros" e "O OU, basta um ser verdadeiro", e usa `E` em `podeBrincar <- (idade >= 12) E (altura
@@ -191,7 +324,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   resolver ainda**. Fica para a Fase C.
 - **Impacto:** símbolo inicial da GLC (Fase C).
 
-## AMB-06 · Sinal negativo vs. menos binário — EM ABERTO (direção proposta a validar)
+## AMB-06 · Sinal negativo vs. menos binário — PARCIALMENTE DECIDIDA (léxico: Fase B, DEC-15; subtração binária: aberta para a Fase C)
+
+> **Resolução parcial (Fase B):** `-` é `TOKEN_MENOS`; número não tem sinal (`-2` = `MENOS` `NUM_INT(2)`).
+> **Continua aberto:** se a gramática aceita `-` binário (hoje SEM EVIDÊNCIA) e como trata a forma negativa.
 
 - **Problema:** `para i de 10 ate 0 passo -2 faca` (Anexo I — Repetição) confirma o caractere `-` e a
   forma negativa/unária. Não existe `n1 - n2` em nenhum exemplo.
@@ -210,7 +346,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Classificação:** expectativa das aulas, **não** requisito inequívoco do enunciado.
 - **Impacto:** formato da saída do parser. Decidir na Fase G.
 
-## AMB-08 · Codificação de caracteres (acentos) — EM ABERTO
+## AMB-08 · Codificação de caracteres (acentos) — EM ABERTO (contrato léxico na Fase B: STRING/comentário opacos; política operacional na Fase F)
+
+> **Fase B:** STRING e comentário tratam o conteúdo como **texto opaco**; `"Olá, mundo!"` e `"João"` devem
+> ser aceitos; IDs são ASCII. Como os bytes são lidos (UTF-8 vs. Windows-1252) fica para a Fase F.
 
 - **Problema:** os exemplos têm acentos em strings e comentários (`"Olá, mundo!"`, `"João"`,
   `// A área de variáveis está vazia`). Arquivo pode estar em UTF-8 ou Windows-1252; o console do
@@ -254,7 +393,11 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   Pode ser revisada por instrução posterior da professora.
 - **Impacto:** produções de `se`/`enquanto` (Fase C); `se x = 1 entao` passa a ser erro sintático.
 
-## AMB-11 · Figura 2 de Token vs. operadores do MiniVisualg — EM ABERTO (direção decidida)
+## AMB-11 · Figura 2 de Token vs. operadores do MiniVisualg — RESOLVIDA na Fase B (decisão já registrada)
+
+> **Resolução (Fase B):** Figura 2 = **formato/orientação**; Anexo I = **vocabulário**. Aplicado em
+> DEC-06, DEC-16, DEC-18 e `especificacao-lexica.md` §14. Segue passível de revisão se a professora
+> disser que a Figura 2 deve ser seguida ao pé da letra.
 
 - **Problema:** a estrutura ilustrativa da Figura 2 (ENUNCIADO ✔PDF) usa um enum de operadores
   relacionais com códigos que parecem didáticos/genéricos e não coincidem perfeitamente com os operadores
@@ -267,7 +410,9 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Impacto:** o `enum` de operadores é montado na Fase B a partir do Anexo I.
 - **Pode depender da professora:** se a Figura 2 deve ser seguida ao pé da letra.
 
-## AMB-12 · Nome do token de identificador: `ID` ou `IDENTIFICADOR` — EM ABERTO
+## AMB-12 · Nome do token de identificador: `ID` ou `IDENTIFICADOR` — DECIDIDA na Fase B (DEC-17: `ID`)
+
+> **Resolução (Fase B):** nome impresso `ID`, interno `TOKEN_ID`. Texto original preservado abaixo.
 
 - **Problema:** o próprio enunciado exemplifica o formato de saída com `11# IDENTIFICADOR | 1` e
   `11# ID | 1` (REQ-23 ✔PDF). Os dois nomes aparecem.
@@ -275,6 +420,31 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Posição atual:** nada decidido. Ambos os exemplos são ilustrativos; o vocabulário de nomes de token é
   definido na **Fase B** e registrado lá.
 - **Impacto:** `enum TokenName`, saída do léxico, testes.
+
+## AMB-13 · Código de retorno em execução com erro léxico/sintático — EM ABERTO
+
+- **Problema:** o enunciado diz duas coisas que podem entrar em tensão:
+  (A) ao ocorrer erro léxico/sintático, apresentar a mensagem exigida e **finalizar todo o processo**;
+  (B) nos critérios de avaliação, o programa que **não finalizar com retorno igual a 0** sofre penalização
+  (REQ-11). Se o próprio teste contém um erro proposital, qual exit status é o esperado?
+- **Fixado:**
+  - entrada **válida** termina com retorno **0**;
+  - erro léxico/sintático **obrigatoriamente encerra** o processamento após a mensagem (DEC-10).
+- **NÃO decidido:** o exit status específico do caso de erro. **Não** assumir `return 1` por convenção
+  sem considerar o critério de avaliação.
+- **Alternativas:** (a) sair com 0 após reportar o erro (o "tratamento" do erro foi bem-sucedido); (b) sair com
+  código ≠ 0 (convenção Unix); (c) o que a professora indicar.
+- **Ação:** idealmente **confirmar com a professora antes da entrega**; decisão final nas Fases H/I.
+- **Impacto:** testes de erro não verificam exit status até lá; `main` de `compilador.c`.
+
+## AMB-14 · Detalhes operacionais da saída léxica — EM ABERTO (Fase F)
+
+- **Problema:** o material não define, e esta fase não congela: (1) o **nome/caminho do arquivo de saída**
+  de tokens; (2) **onde** a mensagem de erro é impressa (stdout/stderr) e se também entra no arquivo de
+  saída; (3) **limites**: estouro de `NUM_INT` além do inteiro do C, comprimento máximo de ID/STRING.
+- **Fixado:** o **conteúdo** das mensagens e da listagem (DEC-22, DEC-26); `NUM_INT` é `[0-9]+` sem limite
+  lexical declarado.
+- **Ação:** decidir na Fase F (nenhum desses pontos altera o vocabulário nem a gramática).
 
 ---
 
@@ -310,12 +480,13 @@ Itens que o material não resolve e que o grupo só decide por conta própria se
 | Item | Por que depende |
 |---|---|
 | AMB-01 espaço entre lexemas | A contradição é do material; nosso tratamento técnico (DEC-05) aceita os dois estilos. |
-| AMB-02 case sensitivity | O material não diz. |
-| AMB-03 `<` e `>` isolados | Sem exemplo; a Figura 2 sugere outra coisa (AMB-11). |
-| AMB-04 `OU` na gramática | Definido só em comentário. |
-| AMB-05 estrutura de procedimentos | Página visualmente inconsistente. |
-| AMB-06 subtração binária | Sem exemplo. |
-| AMB-07 árvore de derivação obrigatória? | Aulas pedem; enunciado não é claro. |
+| AMB-02 case sensitivity | **Decidida (DEC-13, conservadora), revisável:** o material não diz; só muda se a professora esclarecer. |
+| AMB-03 `<` e `>` isolados | **Decidida no léxico (DEC-16), revisável:** sem exemplo; a Figura 2 sugere outra coisa (AMB-11). |
+| AMB-04 `OU` na gramática | Léxico decidido (DEC-14). Aceitação sintática: aberta (Fase C). |
+| AMB-05 estrutura de procedimentos | Página visualmente inconsistente. Totalmente aberta (Fase C). |
+| AMB-06 subtração binária | Léxico decidido (DEC-15). Subtração binária: sem exemplo; aberta (Fase C). |
+| AMB-07 árvore de derivação obrigatória? | Aulas pedem; enunciado não é claro (Fase G). |
 | AMB-10 parênteses em `se`/`enquanto` | Decidido de forma conservadora; revisável. |
-| AMB-11 seguir a Figura 2 literalmente? | Enunciado a apresenta como ilustrativa. |
-| AMB-12 nome do token (`ID`/`IDENTIFICADOR`) | O enunciado usa ambos nos exemplos. |
+| AMB-11 seguir a Figura 2 literalmente? | **Resolvida (formato vs. vocabulário)**, revisável: o enunciado a apresenta como ilustrativa. |
+| AMB-12 nome do token (`ID`/`IDENTIFICADOR`) | **Decidida (DEC-17: `ID`).** O enunciado usa ambos nos exemplos; não se afirma que o outro esteja errado. |
+| AMB-13 código de retorno em erro | O enunciado exige encerrar **e** penaliza retorno ≠ 0. **Confirmar com a professora.** |

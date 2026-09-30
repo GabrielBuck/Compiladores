@@ -7,7 +7,7 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 |---|---|---|---|
 | A | Auditoria do repositório + requisitos — **CONCLUÍDA** | `docs/` iniciais, README, readme.txt | — |
 | A.1 | Conferência contra o PDF oficial — **CONCLUÍDA** após o commit desta fase | correções factuais em `docs/`, README, readme.txt | — |
-| B | Especificação lexical formal | `docs/especificacao-lexica.md` (ERs, tokens, atributos, formato de saída) | 1 (20%) |
+| B | Especificação lexical formal — **CONCLUÍDA** | `docs/especificacao-lexica.md` (ERs, tokens, atributos, formato de saída) | 1 (20%) |
 | C | Gramática Livre de Contexto | `docs/gramatica.md` | 1 (20%) |
 | D | FIRST / FOLLOW / nullable + verificação LL(1) | seção em `gramatica.md` | 1 → 3 |
 | E | Casos de teste derivados da gramática | `testes/` + `docs/testes.md` | 2 e 3 |
@@ -45,21 +45,28 @@ feita externamente pelo grupo e aplicada aqui. Principais correções:
 
 Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Contexto Mestre.
 
-## Fase B — Especificação lexical
+## Fase B — Especificação lexical  — CONCLUÍDA
 
-- **Entrada:** AMB-01, 02, 03, 04, 06, 11 e 12 resolvidas (ou explicitamente adiadas com justificativa);
-  AMB-08 só até o nível "STRING é conteúdo textual opaco" (política operacional fica para a Fase F).
-- **Conteúdo:** ER de cada token de classe; tabela de lexemas fixos; convenção de atributo por token;
-  formato exato de `NúmeroDaLinha# NomeToken | Atributo`; definição dos membros da `union` do `Token`;
-  política de erro léxico (qual sequência é exibida).
-- **Critério de saída:** cada lexema dos exemplos do Anexo I é classificado sem ambiguidade;
-  cada regra tem ID rastreável para teste.
+- **Saída:** `docs/especificacao-lexica.md` (contrato léxico congelado; regras `LEX-01`…`LEX-18`),
+  `decisoes.md` com DEC-13…DEC-27, AMB-13 e AMB-14.
+- **Decidido:** case-sensitive (AMB-02); `<`/`>` isolados = erro léxico (AMB-03); `OU` = token reservado
+  próprio (parte lexical de AMB-04); `-` = `TOKEN_MENOS`, número sem sinal (parte lexical de AMB-06);
+  nome impresso `ID` (AMB-12); AMB-11 resolvida (Figura 2 = formato, Anexo I = vocabulário).
+- **Contrato:** 50 nomes de token (49 impressos); atributos por token; saída `linha# NOME [| atributo]`;
+  `TOKEN_EOF` interno e não impresso.
+- **Correção prévia:** DEC-10 não fixa mais o exit status (AMB-13 aberta).
+- **Continuam abertas:** AMB-04 (gramática), AMB-05, AMB-06 (subtração binária), AMB-07, AMB-08 (Fase F),
+  AMB-13, AMB-14.
+- **Fora do escopo cumprido:** nenhum código C, nenhum scanner, nenhuma gramática.
 
-## Fase C — GLC
+## Fase C — GLC  — PRÓXIMA
 
-- **Entrada:** AMB-04, 05 e 06 (subtração binária) decididas. AMB-10 já está decidida (parênteses
-  obrigatórios em `se`/`enquanto`, conservador). Declaração com lista de IDs e atribuição/`leia` com
-  elemento de vetor são requisitos confirmados da gramática.
+- **Pré-requisito atendido:** o vocabulário léxico está congelado (`especificacao-lexica.md` §20) e **não
+  deve ser reinventado durante a GLC**. Terminais = os do §3; faltou um terminal → emenda ao contrato
+  na Fase B, não invenção na C.
+- **Entrada:** AMB-04 (aceitação sintática de `OU`), AMB-05 e AMB-06 (subtração binária) a decidir na C.
+  AMB-10 já está decidida (parênteses obrigatórios em `se`/`enquanto`, conservador). Declaração com
+  lista de IDs e atribuição/`leia` com elemento de vetor são requisitos confirmados da gramática.
 - **Conteúdo:** gramática derivando todas as expressões-teste de `especificacao-minivisualg.md` §5 e
   todos os exemplos do Anexo I; sem produção para nada sem evidência.
 - **Critério de saída:** sem recursão à esquerda, fatorada, cada produção com comentário de origem.

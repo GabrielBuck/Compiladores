@@ -174,7 +174,12 @@ linha_decorativa
 mostrar_erro("...")
 ```
 
-## 6. Elementos léxicos (candidatos — não definitivos)
+## 6. Elementos léxicos (candidatos da Fase A — **superados pela Fase B**)
+
+> **Esta seção é histórica.** O contrato léxico definitivo está em
+> [`especificacao-lexica.md`](especificacao-lexica.md) (Fase B). Em caso de divergência, vale o contrato
+> da Fase B. Em particular: `leia`/`escreva`/`escreval` **são reservadas**; `OU` é token reservado próprio
+> (aceitação sintática na Fase C); o léxico é case-sensitive; `<` e `>` isolados são erro léxico.
 
 ### Palavras reservadas com evidência
 

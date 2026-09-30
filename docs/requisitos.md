@@ -96,6 +96,26 @@ Só se cita a seção do PDF quando ela foi confirmada. Onde a seção exata ain
 | REQ-41 | Apresentar a GLC correspondente. | ENUNCIADO |
 | REQ-42 | Gramática sem recursão à esquerda e fatorada; FIRST/FOLLOW/nullable calculados; verificação LL(1). | AULA — análise descendente; GRUPO (verificação explícita) |
 
+## Rastreabilidade: requisito → especificação léxica (Fase B)
+
+Somente referências. **As origens acima não foram alteradas**; as decisões da Fase B continuam `GRUPO`.
+
+| Requisito | Onde a Fase B o trata (`especificacao-lexica.md`) |
+|---|---|
+| REQ-14 (lexemas separados por espaço) | §2 princípio 5, §10 — scanner não depende de espaços (LEX-09) |
+| REQ-20 (struct de token) | §14 — campos conceituais `type`, `line`, `lexeme`, atributo |
+| REQ-21 (Figura 2, ilustrativa) | §14 — como a estrutura deriva da Figura 2 |
+| REQ-22 (arquivo **e** tela) | §16 — mesma listagem nos dois destinos (LEX-17) |
+| REQ-23 (formato `linha# Nome \| Atributo`) | §15, §16 — atributos por token; omissão de `\| atributo` quando não há (LEX-16, LEX-17) |
+| REQ-24 (erro léxico) | §17 — situações, sequência reportada, formato da mensagem (LEX-13, LEX-18); exit status em AMB-13 |
+| REQ-25 (ignorar espaço/comentários; contar linhas) | §9, §10 (LEX-08, LEX-09) |
+| REQ-26 (tabela de símbolos) | §13 — só IDs, índice estável (LEX-15) |
+| REQ-27 (não basta lista) | §5, §11 — catálogos + reconhecedores de classe (LEX-02..07) |
+| REQ-28 (nomes de módulos) | §14 — `obterToken()` é a interface do léxico; nenhum outro nome fixado |
+| REQ-29 (não copiar a Figura 2 cegamente) | §14 — adaptação ao MiniVisualg |
+| REQ-32 (`nextToken()` → `obterToken()`) | §3.A, §16 — `TOKEN_EOF` como fronteira da interface (DEC-23) |
+| REQ-40 (expressões regulares) | §4 — ERs de ID, NUM_INT, NUM_REAL, STRING; §9 — comentário |
+
 ## Restrições de processo do grupo (todas as sessões)
 
 Origem: `GRUPO`.

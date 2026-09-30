@@ -10,14 +10,15 @@ do enunciado.
 
 ## Estado atual
 
-**Fase A (auditoria e requisitos) e Fase A.1 (conferência contra o PDF oficial) concluídas. Nada foi implementado ainda.**
-Não há analisador léxico, analisador sintático nem `compilador.c` neste momento.
+**Fase A (auditoria e requisitos), Fase A.1 (conferência contra o PDF oficial) e Fase B (especificação
+léxica) concluídas — somente documentação.** Não há analisador léxico, analisador sintático nem
+`compilador.c` neste momento. A próxima fase é a **C (Gramática Livre de Contexto)**.
 
 | Etapa do enunciado | Peso | Situação |
 |---|---|---|
-| 1 — ERs + GLC | 20% | não iniciada (Fases B–D) |
-| 2 — Analisador léxico | 40% | não iniciada (Fase F) |
-| 3 — Analisador sintático | 40% | não iniciada (Fase G) |
+| 1 — ERs + GLC | 20% | **ERs: especificadas** (`docs/especificacao-lexica.md`). **GLC: ainda não iniciada** (Fase C) |
+| 2 — Analisador léxico | 40% | **não implementado** (especificação pronta; implementação na Fase F) |
+| 3 — Analisador sintático | 40% | **não implementado** (Fase G) |
 
 ## Abordagem (decisões do grupo)
 
@@ -27,7 +28,10 @@ Não há analisador léxico, analisador sintático nem `compilador.c` neste mome
 - Parser descendente recursivo preditivo LL(1), uma função por não-terminal (`DEC-03`).
 - Léxico e sintático integrados sob demanda: `nextToken()` → `obterToken()`. Isto é **requisito do enunciado**
   (REQ-32, REQ-28); o restante do desenho é do grupo (`DEC-04`).
-- Primeiro erro léxico ou sintático encerra o processamento (`DEC-10`).
+- Primeiro erro léxico ou sintático encerra o processamento (`DEC-10`). O código de retorno nesse caso
+  **ainda não está decidido** (`AMB-13`).
+- Léxico case-sensitive; 50 nomes de token; `<` e `>` isolados e `.` isolado são erro léxico
+  (`DEC-13`, `DEC-16`, `DEC-24`).
 
 ## Compilação e execução (quando houver código)
 
@@ -45,10 +49,11 @@ O nome do arquivo MiniVisualg é sempre recebido por linha de comando.
 |---|---|
 | [requisitos.md](docs/requisitos.md) | Requisitos rastreáveis, com origem (enunciado / aula / grupo). |
 | [especificacao-minivisualg.md](docs/especificacao-minivisualg.md) | Inventário do que o Anexo I confirma, menciona ou não cobre. |
+| [especificacao-lexica.md](docs/especificacao-lexica.md) | **Contrato léxico congelado (Fase B):** tokens, ERs, atributos, formato de saída, erros. |
 | [decisoes.md](docs/decisoes.md) | Decisões do grupo e ambiguidades do material em aberto. |
 | [plano.md](docs/plano.md) | Fases A–J e critérios de saída. |
 
-Previstos nas próximas fases: `especificacao-lexica.md`, `gramatica.md`, `arquitetura.md`, `testes.md`.
+Previstos nas próximas fases: `gramatica.md`, `arquitetura.md`, `testes.md`.
 
 ## Política de branches
 

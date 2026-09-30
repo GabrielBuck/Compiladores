@@ -3,6 +3,9 @@
 Formato de cada item: **Problema · Alternativas · Decisão · Justificativa · Impacto**.
 Origem das decisões: `GRUPO`, salvo onde indicado. Nenhuma decisão aqui é atribuída à professora.
 
+> **Conferência (Fase A.1).** Itens marcados **✔PDF** foram reconciliados com o PDF oficial do Projeto 1
+> (conferido externamente pelo grupo). Os demais vêm do Contexto Mestre e seguem a conferir.
+
 Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indicada) · **EM ABERTO**
 (nada foi decidido; nenhum código deve assumir um lado).
 
@@ -47,7 +50,10 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
 - **Alternativas:** léxico roda inteiro e grava lista de tokens; léxico sob demanda.
 - **Decisão:** o sintático chama `nextToken()`, que chama `obterToken()` do léxico. O léxico continua
   mostrando e gravando cada token no momento em que é produzido.
-- **Justificativa:** é o modelo conceitual das aulas; evita duas aplicações desconectadas.
+- **Justificativa:** a integração **e os nomes `nextToken()` / `obterToken()` são requisito do próprio
+  enunciado** (REQ-32, ENUNCIADO — Objetivo ✔PDF; REQ-28, nomes de módulos sugeridos, Etapas 2 e 3 ✔PDF).
+  As aulas apenas reforçam o modelo. O que é *decisão do grupo* é o restante do desenho: o léxico
+  mostrar/gravar cada token na hora em que o produz, e o `lookahead` do parser ser o único buffer.
 - **Impacto:** o `lookahead` do parser é o único buffer de tokens; um erro léxico encerra o processo
   mesmo no meio do parsing. Ainda é preciso definir na Fase H como a saída do léxico e a do parser
   se intercalam (ou se a listagem de tokens é feita em modo separado).
@@ -68,10 +74,17 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
 
 ## DEC-06 · Struct `Token` com `union` de atributo  — DECIDIDA (forma); campos PROVISÓRIOS até a Fase B
 
-- **Problema:** o enunciado exige `struct` com campos de tipos diferentes.
-- **Decisão:** `Token { TokenName tipo; int linha; union { índice na TS; valor inteiro; valor real;
-  código de operador } atributo; }`, com `enum` para tipos internos. A estrutura do slide é só referência.
-- **Justificativa:** atende REQ-20/21; o conjunto exato de membros depende dos tokens reais.
+- **Problema:** o enunciado exige um registro (`struct`) com campos de tipos diferentes (REQ-20 ✔PDF) e
+  oferece na Figura 2 uma estrutura ilustrativa com tipo, linha e `union` de atributos (REQ-21 ✔PDF).
+- **Alternativas:** copiar a Figura 2 literalmente; usar `struct` sem `union`; adaptar a Figura 2 aos
+  tokens reais.
+- **Decisão (GRUPO, REQ-29):** adaptar. `Token { TokenName tipo; int linha; union { índice na TS;
+  valor inteiro; valor real; código de operador } atributo; }`, com `enum` para tipos internos.
+- **Separação de origens:** que exista `struct` de token é **ENUNCIADO — Etapa 2**; que a Figura 2 mostre
+  esse formato é **ENUNCIADO — Figura 2** (referência ilustrativa); que *não* a copiemos cegamente é
+  **GRUPO**.
+- **Justificativa:** a Figura 2 orienta o *formato*; os membros reais dependem dos tokens do MiniVisualg
+  (ver AMB-11).
 - **Impacto:** os membros definitivos e a convenção "qual token tem atributo" saem na Fase B.
 
 ## DEC-07 · Tabela de símbolos mínima  — DECIDIDA
@@ -125,8 +138,10 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 
 ## AMB-01 · Espaço entre lexemas vs. exemplos adjacentes — EM ABERTO (tratamento técnico: DEC-05)
 
-- **Problema:** o enunciado diz "todos os lexemas estão separados por um espaço"; o Anexo I tem
-  `leia(nome)`, `escreval("Olá, mundo!")`, `nomes[1]`, `somar(10, 5)`.
+- **Problema:** o enunciado afirma "Considerar que todos os lexemas no código fonte estão separados por
+  um espaço" (REQ-14, ENUNCIADO ✔PDF), mas o Anexo I tem `leia(nome)`, `escreval("Olá, mundo!")`,
+  `nomes[1]`, `somar(10, 5)` (contradição confirmada na A.1). **A contradição é do material e não é
+  escondida aqui.**
 - **Alternativas:** (a) exigir espaço e rejeitar os exemplos; (b) aceitar os dois estilos.
 - **Direção já tomada:** (b), por DEC-05. Em aberto apenas: *programas de teste sem espaço são
   considerados válidos?* (assumimos sim).
@@ -145,12 +160,19 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 
 - **Problema:** há `<-`, `<>`, `<=`, `>=`; não há exemplo de `<` ou `>` sozinhos.
 - **Alternativas:** (a) **não** aceitar → `ERRO LÉXICO` se aparecerem; (b) aceitar como relacionais.
-- **Posição atual:** não incluir. `<` só existe como prefixo de token composto.
+- **Posição atual:** não incluir (Anexo I — Operadores confirma só `=`, `<>`, `>=`, `<=`). `<` e `>`
+  só existem como prefixo de token composto; ambos ficam **em aberto / não suportados provisoriamente**.
+- **Não usar a Figura 2 para decidir:** ela ilustra códigos de operador relacionais que não coincidem
+  com os do Anexo I (ver AMB-11).
 - **Impacto:** tabela de operadores; casos de teste de erro léxico. Decidir na Fase B.
 
 ## AMB-04 · `OU` apenas mencionado — EM ABERTO
 
-- **Problema:** há um comentário "O OU, basta um ser verdadeiro", mas nenhum uso executável.
+- **Problema:** o Anexo I (Operadores lógicos) traz os comentários "O E exige que os DOIS lados sejam
+  verdadeiros" e "O OU, basta um ser verdadeiro", e usa `E` em `podeBrincar <- (idade >= 12) E (altura
+  >= 1.50)`. `OU` **não** aparece em nenhuma expressão executável.
+- **Classificação:** `E` = confirmado por uso; `OU` = mencionado/definido textualmente. A distinção é
+  mantida; `OU` não é esquecido.
 - **Alternativas:** (a) entra como operador; (b) fica fora (vira ID, que é estranho); (c) reservado
   para não virar ID, mas sem produção na gramática.
 - **Posição atual:** não transformar em ID silenciosamente. Decidir conscientemente na Fase B/C.
@@ -165,16 +187,21 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   declaração nem na chamada; com parâmetros, cada um é `nome: tipo`; funções têm `: tipo` de retorno.
 - **Perguntas abertas:** (1) `var` é opcional? (2) sub-rotinas ficam entre `algoritmo` e `var`, ou
   também depois? (3) podem ser misturadas funções e procedimentos em qualquer ordem?
+- **Conferência A.1:** a disposição visual da página de PROCEDIMENTOS é de fato inconsistente; **não
+  resolver ainda**. Fica para a Fase C.
 - **Impacto:** símbolo inicial da GLC (Fase C).
 
-## AMB-06 · Sinal negativo vs. menos binário — EM ABERTO (proposta a validar)
+## AMB-06 · Sinal negativo vs. menos binário — EM ABERTO (direção proposta a validar)
 
-- **Problema:** `passo -2` confirma o caractere `-`; não há `n1 - n2`.
+- **Problema:** `para i de 10 ate 0 passo -2 faca` (Anexo I — Repetição) confirma o caractere `-` e a
+  forma negativa/unária. Não existe `n1 - n2` em nenhum exemplo.
+- **Situação por forma:** sinal negativo / menos unário = **CONFIRMADO** (`-2`); subtração binária =
+  **SEM EVIDÊNCIA**. Não adicionar subtração binária por simetria com `+`.
 - **Alternativas:** (a) léxico produz `NUM_INT` negativo; (b) léxico produz `MENOS` e `NUM_INT(2)`, e a
-  gramática trata sinal unário; (c) (b) e ainda aceitar `-` binário.
-- **Proposta:** (b) para o token; se o `-` binário será aceito na gramática é a parte aberta.
-  (a) é desaconselhada: quebra `a -2` se um dia houver subtração.
-- **Impacto:** ER de número, gramática de expressão. Decidir na Fase B/C.
+  gramática trata a forma negativa; (c) (b) e ainda aceitar `-` binário.
+- **Direção:** (b). (a) é desaconselhada: quebraria `a -2` caso um dia houvesse subtração. Tratar a
+  forma negativa na gramática é sintaxe, não análise semântica.
+- **Impacto:** ER de número, gramática de expressão e de `passo`. Decidir na Fase B/C.
 
 ## AMB-07 · Árvore de derivação — EM ABERTO (ver DEC-11)
 
@@ -190,8 +217,13 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   MinGW/Windows pode exibir diferente.
 - **Alternativas:** tratar bytes ≥ 0x80 como caracteres comuns *dentro* de string e comentário,
   e como `ERRO LÉXICO` fora deles; ou aceitar também em identificadores.
-- **Posição atual:** bytes ≥ 0x80 só dentro de string/comentário; ID segue ASCII.
-- **Impacto:** reconhecedores de STRING/comentário; testes com arquivos UTF-8 e ANSI. Fase B/F.
+- **Fatos (A.1):** strings e comentários oficiais têm acentos; os identificadores usados como evidência
+  são ASCII; o scanner não pode quebrar os exemplos por causa de bytes de strings/comentários.
+- **Escopo por fase:** na **Fase B** basta definir que STRING transporta **conteúdo textual opaco** entre
+  aspas, dentro das limitações escolhidas. A política operacional exata (UTF-8 vs. Windows-1252, como
+  tratar bytes ≥ 0x80) fica para a **Fase F**. Nenhuma política completa é inventada agora.
+- **Posição atual (provisória):** bytes ≥ 0x80 só dentro de string/comentário; ID segue ASCII.
+- **Impacto:** reconhecedores de STRING/comentário; testes com arquivos UTF-8 e ANSI.
 
 ## AMB-09 · Comando iniciado por identificador (risco LL(1) antecipado) — EM ABERTO
 
@@ -200,13 +232,90 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   indistinguível de um ID solto.
 - **Alternativas:** fatorar à esquerda em `ID` + cauda (`<-` | `[` ... | `(` ... | vazio);
   ou lookahead de 2 tokens (sairia de LL(1)).
+- **Conferência A.1:** o Anexo I contém `nomes[1] <- "Ana"`, `leia(notas[i])` e `nomes[2]`; logo atribuição
+  indexada e referência indexada são CONFIRMADAS e entram no problema. O alvo de atribuição e o
+  argumento de `leia` têm forma simples (`ID`) ou indexada (`ID [ expressão ]`).
 - **Posição atual:** resolver por fatoração (mantém LL(1)); confirmar com FIRST/FOLLOW na Fase D.
 - **Impacto:** é o primeiro conflito que a verificação LL(1) deve examinar.
 
-## AMB-10 · Parênteses obrigatórios em `se`/`enquanto`? — EM ABERTO
+## AMB-10 · Parênteses em `se` e `enquanto` — DECIDIDA (decisão conservadora, revisável)
 
-- **Problema:** todos os exemplos têm `se (cond) entao` e `enquanto (cond) faca`; `para` não tem.
-- **Alternativas:** parênteses fazem parte da sintaxe do comando; ou são só parênteses de expressão
-  (e `se x = 1 entao` também seria aceito).
-- **Posição atual:** tratar como parte do comando (regra mais restritiva, consistente com REQ-04).
-- **Impacto:** produções de `se`/`enquanto`; casos de erro sintático. Fase C.
+- **Problema:** se a condição de `se`/`enquanto` poderia dispensar parênteses.
+- **Fatos (Anexo I — Controle e Repetição):** **todos** os exemplos usam `se ( expressão ) entao` e
+  `enquanto ( expressão ) faca`. Nenhum exemplo as escreve sem parênteses. `para` não tem parênteses.
+- **Decisão (GRUPO):** estrutura **SUPORTADA** somente
+  - `se ( expressão ) entao`
+  - `enquanto ( expressão ) faca`
+
+  Os parênteses fazem parte do comando no MiniVisualg deste projeto.
+- **Justificativa:** o princípio do Projeto 1 é conservador: só as estruturas dos exemplos são suportadas
+  (REQ-04). **Não** afirmamos nada sobre o que o Visualg verdadeiro aceita; isso é irrelevante aqui.
+- **Natureza:** decisão conservadora baseada no Anexo I, **não** regra universal do Visualg.
+  Pode ser revisada por instrução posterior da professora.
+- **Impacto:** produções de `se`/`enquanto` (Fase C); `se x = 1 entao` passa a ser erro sintático.
+
+## AMB-11 · Figura 2 de Token vs. operadores do MiniVisualg — EM ABERTO (direção decidida)
+
+- **Problema:** a estrutura ilustrativa da Figura 2 (ENUNCIADO ✔PDF) usa um enum de operadores
+  relacionais com códigos que parecem didáticos/genéricos e não coincidem perfeitamente com os operadores
+  concretos do Anexo I: `=`, `<>`, `<=`, `>=`.
+- **Alternativas:** (a) tomar o enum da Figura 2 como vocabulário da linguagem; (b) tomar a Figura 2 só
+  como formato da struct/union e definir o vocabulário a partir do Anexo I.
+- **Decisão atual (GRUPO):** (b). A Figura 2 orienta o **formato** da struct/union (REQ-21, DEC-06); **não**
+  redefine nem amplia o vocabulário lexical do Anexo I. Em particular, não serve de argumento para aceitar
+  `<` ou `>` isolados (AMB-03).
+- **Impacto:** o `enum` de operadores é montado na Fase B a partir do Anexo I.
+- **Pode depender da professora:** se a Figura 2 deve ser seguida ao pé da letra.
+
+## AMB-12 · Nome do token de identificador: `ID` ou `IDENTIFICADOR` — EM ABERTO
+
+- **Problema:** o próprio enunciado exemplifica o formato de saída com `11# IDENTIFICADOR | 1` e
+  `11# ID | 1` (REQ-23 ✔PDF). Os dois nomes aparecem.
+- **Alternativas:** (a) `ID`; (b) `IDENTIFICADOR`; (c) outra nomenclatura uniforme para todos os tokens.
+- **Posição atual:** nada decidido. Ambos os exemplos são ilustrativos; o vocabulário de nomes de token é
+  definido na **Fase B** e registrado lá.
+- **Impacto:** `enum TokenName`, saída do léxico, testes.
+
+---
+
+# Parte 3 — Preocupações operacionais (não são decisões de linguagem)
+
+## OP-01 · Fim de linha CRLF/LF
+
+O aviso do Git (LF → CRLF) é do ambiente Git, não requisito da linguagem nem elemento da gramática.
+Quando houver scanner, ele deve contar linhas corretamente em Windows: `\r\n` é tratado como **uma**
+quebra de linha lógica. Registrado como preocupação de **teste** (Fases E e I), não como decisão
+arquitetural.
+
+## OP-02 · `gcc` neste computador
+
+O `gcc` não está no PATH. Uma instalação MSYS2 pode existir em `C:\msys64\mingw64\bin\gcc.exe`.
+**Nada foi instalado.** Antes da primeira compilação (a partir da Fase F), executar:
+
+```powershell
+Test-Path "C:\msys64\mingw64\bin\gcc.exe"
+# se True:
+$env:PATH += ";C:\msys64\mingw64\bin"
+gcc --version
+```
+
+e só então compilar com o comando de referência. A alteração de PATH vale só para a sessão do terminal.
+
+---
+
+# Parte 4 — O que ainda pode depender da professora
+
+Itens que o material não resolve e que o grupo só decide por conta própria se não houver resposta:
+
+| Item | Por que depende |
+|---|---|
+| AMB-01 espaço entre lexemas | A contradição é do material; nosso tratamento técnico (DEC-05) aceita os dois estilos. |
+| AMB-02 case sensitivity | O material não diz. |
+| AMB-03 `<` e `>` isolados | Sem exemplo; a Figura 2 sugere outra coisa (AMB-11). |
+| AMB-04 `OU` na gramática | Definido só em comentário. |
+| AMB-05 estrutura de procedimentos | Página visualmente inconsistente. |
+| AMB-06 subtração binária | Sem exemplo. |
+| AMB-07 árvore de derivação obrigatória? | Aulas pedem; enunciado não é claro. |
+| AMB-10 parênteses em `se`/`enquanto` | Decidido de forma conservadora; revisável. |
+| AMB-11 seguir a Figura 2 literalmente? | Enunciado a apresenta como ilustrativa. |
+| AMB-12 nome do token (`ID`/`IDENTIFICADOR`) | O enunciado usa ambos nos exemplos. |

@@ -5,28 +5,34 @@ Grupo: Gabriel Nottoli Buck, Julia Andrade, Joao vitor rocha miranda
 Linguagem analisada: **MiniVisualg** (subconjunto simplificado do Visualg)
 Linguagem de implementação: **C**
 
-> **Fonte deste documento.** Tudo aqui foi reconstruído a partir do *Contexto Mestre*
-> entregue ao início do projeto (resumo do enunciado, das aulas e do Anexo I).
-> O PDF original do enunciado **não** foi consultado nesta sessão. Antes da entrega,
-> cada linha marcada `ENUNCIADO` deve ser conferida contra o PDF (ver `plano.md`, Fase A,
-> item de conferência).
+> **Fonte e estado de conferência.** Este documento nasceu na Fase A a partir do *Contexto Mestre*
+> (resumo do enunciado, das aulas e do Anexo I). Na **Fase A.1** parte dele foi reconciliada com o
+> PDF oficial *"PROJETO 1 – Fase 1 – Análise Léxica e Análise Sintática"*, conferido externamente
+> pelo grupo. Itens marcados **✔PDF** foram confirmados contra o PDF nessa reconciliação; itens sem a
+> marca vêm do Contexto Mestre e continuam **a conferir** antes da entrega.
 
 ## Legenda de origem
 
+A origem é sempre o mais específica possível: *o que* sustenta o item e *onde*.
+
 | Etiqueta | Significado |
 |---|---|
-| `ENUNCIADO` | Exigência do enunciado do projeto. |
-| `AULA` | Conteúdo/orientação das aulas; esperado, mas não necessariamente formal no enunciado. |
+| `ENUNCIADO — Objetivo` / `Etapa 1` / `Etapa 2` / `Etapa 3` / `Critério de Avaliação` / `Figura 2` | Exigência ou referência do PDF do Projeto 1, na seção indicada. |
+| `ANEXO I — Variáveis` / `Operadores` / `Controle` / `Repetição` / `Vetores` / `Procedimentos` / `Funções` | Evidência de linguagem extraída dos exemplos do Anexo I, na seção indicada. |
+| `AULA — <tema>` | Conteúdo/orientação das aulas; esperado, mas não necessariamente formal no enunciado. |
 | `GRUPO` | Decisão do grupo (registrada em `decisoes.md`). Nunca atribuída à professora. |
-| `AMBIGUIDADE` | Material contraditório ou lacunar; registrada em `decisoes.md` (seção "Ambiguidades"). |
+| `AMBIGUIDADE` | Material contraditório ou lacunar; registrada em `decisoes.md` (Parte 2). |
+| `✔PDF` | Item conferido contra o PDF original na Fase A.1. |
+
+Só se cita a seção do PDF quando ela foi confirmada. Onde a seção exata ainda não foi anotada, a origem fica apenas `ENUNCIADO` (sem chute).
 
 ## Etapas e pesos
 
 | Etapa | Peso | Conteúdo | Origem |
 |---|---|---|---|
-| 1 | 20% | Expressões regulares + Gramática Livre de Contexto | ENUNCIADO |
-| 2 | 40% | Analisador léxico | ENUNCIADO |
-| 3 | 40% | Analisador sintático | ENUNCIADO |
+| 1 | 20% | Expressões regulares + Gramática Livre de Contexto | ENUNCIADO — Etapa 1 |
+| 2 | 40% | Analisador léxico | ENUNCIADO — Etapa 2 |
+| 3 | 40% | Analisador sintático | ENUNCIADO — Etapa 3 |
 
 **Não entregar uma etapa zera o projeto** (ENUNCIADO). As três etapas são obrigatórias.
 
@@ -44,6 +50,8 @@ Linguagem de implementação: **C**
 | REQ-06 | Entrega = código + documentação, ou código muito bem comentado. | ENUNCIADO |
 | REQ-07 | Existe um `readme.txt` com: até que parte o trabalho foi concluído; como executar; bugs/erros conhecidos; opcionalmente decisões de design. | ENUNCIADO |
 | REQ-08 | Entrega conservadora do grupo: `compilador.c`, `documentacao.pdf`, `readme.txt`. | GRUPO |
+| REQ-09 | A nota final de **cada etapa** depende da **entrega da documentação** e da **apresentação**. Consequência prática: toda decisão precisa ser defensável oralmente. | ENUNCIADO — Critério de Avaliação ✔PDF |
+| REQ-14 | "Considerar que todos os lexemas no código fonte estão separados por um espaço." Esta regra **contradiz** exemplos do próprio Anexo I (ver AMB-01). | ENUNCIADO ✔PDF (contradição: AMBIGUIDADE AMB-01) |
 
 ### Compilação e execução
 
@@ -58,14 +66,16 @@ Linguagem de implementação: **C**
 
 | ID | Requisito | Origem |
 |---|---|---|
-| REQ-20 | Cada token é armazenado em um `struct` com campos de tipos diferentes (tipo, linha, atributo quando aplicável). | ENUNCIADO |
-| REQ-21 | O `struct Token` do slide é referência conceitual (tipo, linha, `union` de atributo); não copiar cegamente. | AULA |
-| REQ-22 | Ler o programa, reconhecer tokens, **mostrar na tela** e **gerar arquivo** com os mesmos tokens. | ENUNCIADO |
-| REQ-23 | Formato de saída: `NúmeroDaLinha# NomeToken \| Atributo` (ex.: `11# ID \| 1`). Nem todo token precisa de atributo significativo. | ENUNCIADO (formato) + GRUPO (quando há atributo) |
+| REQ-20 | "Cada token deve ser armazenado em um registro (struct) com um conjunto de campos de tipos diferentes para armazenar cada uma das informações referente ao token." | ENUNCIADO — Etapa 2 ✔PDF |
+| REQ-21 | O PDF traz, na **Figura 2**, uma estrutura *ilustrativa* de token com: tipo, linha e `union` de atributos. É **referência de formato**, não vocabulário obrigatório (ver AMB-11). | ENUNCIADO — Figura 2 ✔PDF (referência ilustrativa) |
+| REQ-22 | O analisador léxico deve **produzir um arquivo** com os tokens **e** apresentar **na tela** o mesmo resultado. Imprimir só na tela não basta. | ENUNCIADO ✔PDF |
+| REQ-23 | Formato de saída: `Número da Linha do Átomo# NomeToken \| Atributo`. O próprio enunciado exemplifica com `11# IDENTIFICADOR \| 1` **e** `11# ID \| 1` (ver AMB-12). Nem todo token precisa de atributo significativo ("se necessário"). | ENUNCIADO ✔PDF (formato); GRUPO (quando há atributo) |
 | REQ-24 | Erro léxico: exibir `ERRO LÉXICO`, a linha e a sequência incorreta; **finalizar todo o processamento**. Sem recuperação sofisticada. | ENUNCIADO |
-| REQ-25 | Ignorar espaço em branco e comentários; controlar número de linha. | AULA |
-| REQ-26 | Tabela de símbolos desde a análise léxica. Escopo do grupo: só identificadores; 1ª ocorrência cria índice, demais reutilizam. | AULA (TS) + GRUPO (escopo) |
-| REQ-27 | Não basta "comparar com uma lista" para tokens de classe (ID, inteiro, real, string). | AULA |
+| REQ-25 | Ignorar espaço em branco e comentários; controlar número de linha. | AULA — implementação do léxico |
+| REQ-26 | Tabela de símbolos desde a análise léxica. Escopo do grupo: só identificadores; 1ª ocorrência cria índice, demais reutilizam. | AULA — tabela de símbolos (TS); GRUPO (escopo) |
+| REQ-27 | Não basta "comparar com uma lista" para tokens de classe (ID, inteiro, real, string). | AULA — implementação do léxico |
+| REQ-28 | **Utilizar os nomes de módulos sugeridos no Projeto 1.** Conhecidos com certeza: `nextToken()` (sintático) e `obterToken()` (léxico). Nenhum outro nome é obrigatório além dos que o PDF explicitar; não inventar. | ENUNCIADO — Etapa 2 e Etapa 3 ✔PDF |
+| REQ-29 | **Decisão do grupo:** não copiar a struct da Figura 2 cegamente; adaptá-la aos tokens reais do MiniVisualg (ver DEC-06). Distinta de REQ-21, que é o que o enunciado oferece. | GRUPO |
 
 ### Análise sintática
 
@@ -73,9 +83,9 @@ Linguagem de implementação: **C**
 |---|---|---|
 | REQ-30 | Análise sintática **descendente**. | ENUNCIADO |
 | REQ-31 | Erro sintático: exibir `ERRO SINTÁTICO`, o token incorreto e a linha; pode informar esperado/encontrado; **finalizar o processo**. | ENUNCIADO |
-| REQ-32 | Léxico e sintático interagem sob demanda: o sintático chama `nextToken()`, que chama `obterToken()` do léxico. | AULA |
-| REQ-33 | Parser **descendente recursivo preditivo LL(1)**, uma função por não-terminal, `lookahead` + `consome()`. | GRUPO (baseado fortemente nas aulas; **não** é exigência literal) |
-| REQ-34 | Registrar/gerar a derivação (árvore de derivação) sem montar uma AST complexa. | AULA (expectativa; ver AMB-07) |
+| REQ-32 | "O analisador léxico deve atender as demandas do analisador sintático. A interação […] se dá por meio da função `nextToken()` (analisador sintático) que realizará chamadas à função `obterToken()` (analisador léxico)." | **ENUNCIADO — Objetivo ✔PDF**. Reforçado por AULA — implementação do sintático. |
+| REQ-33 | Parser **descendente recursivo preditivo LL(1)**, uma função por não-terminal, `lookahead` + `consome()`. | GRUPO (baseado fortemente nas aulas; **não** é exigência literal do enunciado) |
+| REQ-34 | Registrar/gerar a derivação (árvore de derivação) sem montar uma AST complexa. | AULA — implementação do sintático (expectativa; ver AMB-07) |
 | REQ-35 | Sem análise semântica e sem geração de código nesta fase. | GRUPO |
 
 ### Etapa 1 — documentos formais
@@ -84,7 +94,7 @@ Linguagem de implementação: **C**
 |---|---|---|
 | REQ-40 | Apresentar as expressões regulares da linguagem. | ENUNCIADO |
 | REQ-41 | Apresentar a GLC correspondente. | ENUNCIADO |
-| REQ-42 | Gramática sem recursão à esquerda e fatorada; FIRST/FOLLOW/nullable calculados; verificação LL(1). | AULA + GRUPO (verificação explícita) |
+| REQ-42 | Gramática sem recursão à esquerda e fatorada; FIRST/FOLLOW/nullable calculados; verificação LL(1). | AULA — análise descendente; GRUPO (verificação explícita) |
 
 ## Restrições de processo do grupo (todas as sessões)
 
@@ -95,7 +105,7 @@ Origem: `GRUPO`.
 3. Nunca afirmar que compila/passa sem executar.
 4. Nunca alterar `main` diretamente; nunca fazer merge sem autorização; nunca `push --force`.
 5. A branch `dev` não é fonte de verdade e não deve ser copiada.
-6. Comentários explicam decisões, não narram linha a linha; código defensável oralmente em ~30 s por decisão.
+6. Comentários explicam decisões, não narram linha a linha; código defensável oralmente em ~30 s por decisão (motivo reforçado por REQ-09).
 7. Rastreabilidade: **material → regra → código → teste**.
 
 ## Prioridades (ordem)

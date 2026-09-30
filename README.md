@@ -10,7 +10,7 @@ do enunciado.
 
 ## Estado atual
 
-**Fase A concluída (auditoria e requisitos). Nada foi implementado ainda.**
+**Fase A (auditoria e requisitos) e Fase A.1 (conferência contra o PDF oficial) concluídas. Nada foi implementado ainda.**
 Não há analisador léxico, analisador sintático nem `compilador.c` neste momento.
 
 | Etapa do enunciado | Peso | Situação |
@@ -25,7 +25,8 @@ Não há analisador léxico, analisador sintático nem `compilador.c` neste mome
 - Scanner caractere a caractere: lexemas fixos em tabela declarativa + reconhecedores próprios para
   tokens de classe (ID, inteiro, real, string) (`DEC-05`).
 - Parser descendente recursivo preditivo LL(1), uma função por não-terminal (`DEC-03`).
-- Léxico e sintático integrados sob demanda: `nextToken()` → `obterToken()` (`DEC-04`).
+- Léxico e sintático integrados sob demanda: `nextToken()` → `obterToken()`. Isto é **requisito do enunciado**
+  (REQ-32, REQ-28); o restante do desenho é do grupo (`DEC-04`).
 - Primeiro erro léxico ou sintático encerra o processamento (`DEC-10`).
 
 ## Compilação e execução (quando houver código)

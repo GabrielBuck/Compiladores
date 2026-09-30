@@ -11,7 +11,8 @@ Integrantes:
 ------------------------------------------------------------
 [ATUALIZAR A CADA FASE]
 
-Situacao atual: FASE A (requisitos e especificacao) concluida.
+Situacao atual: FASE A (requisitos e especificacao) e FASE A.1 (conferencia
+com o PDF oficial) concluidas.
 
   Etapa 1 - Expressoes regulares e GLC ......... NAO INICIADA
   Etapa 2 - Analisador lexico .................. NAO INICIADA
@@ -41,7 +42,8 @@ Nenhum codigo implementado ate o momento.
 - Linguagem C pura, sem geradores de analisadores nem bibliotecas externas.
 - Analisador lexico caractere a caractere: lexemas fixos em tabela e
   reconhecedores proprios para identificadores, numeros e strings.
-- Analisador sintatico descendente recursivo preditivo LL(1); o sintatico
-  pede tokens ao lexico sob demanda (nextToken -> obterToken).
+- Analisador sintatico descendente recursivo preditivo LL(1) (decisao do
+  grupo). O sintatico pede tokens ao lexico sob demanda: nextToken() chama
+  obterToken(), conforme o enunciado.
 - Erro lexico ou sintatico encerra o processamento.
 - Detalhes e ambiguidades do material: docs/decisoes.md no repositorio.

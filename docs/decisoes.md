@@ -406,6 +406,24 @@ professora; as marcadas "revisável" podem mudar por instrução dela.
   detalhe do parser (Fase G); no FOLLOW (Fase D) ele entra só como o marcador `$`.
 - **Justificativa:** `TOKEN_EOF` não é lexema do programa (DEC-23).
 
+## Decisão da Fase D — validação LL(1)
+
+## DEC-47 · GLC P01–P91 validada como LL(1)  — DECIDIDA (Fase D)
+
+- **Problema:** a Fase C projetou a GLC para LL(1) e só a inspecionou qualitativamente; o parser preditivo
+  (DEC-03) precisa de prova.
+- **Método:** nullable, FIRST e FOLLOW por ponto fixo sobre as 91 produções publicadas; SELECT de cada
+  produção; comparação de todos os pares de alternativas; tabela preditiva. Cálculo manual conferido por
+  verificador descartável fora do repositório (0 divergências). Detalhe: `analise-ll1.md`.
+- **Resultado:** 17 anuláveis; 24 não-terminais com alternativas, 85 pares, **todas as interseções de
+  SELECT vazias**; tabela preditiva com 281 células, **nenhuma duplicada**. `$` só em
+  FOLLOW(`<programa>`) e em nenhum SELECT.
+- **Decisão:** a GLC da Fase C é aceita **sem emendas**; P01–P91 permanecem idênticas às do commit `a712477`.
+- **Impacto na implementação (Fase G):** uma função por não-terminal; **1 token de lookahead** basta;
+  sem backtracking; decisões dadas pelo mapa de `analise-ll1.md` §13. `$` corresponde a `TOKEN_EOF`
+  (DEC-46). Se a gramática mudar (ex.: resposta da professora sobre AMB-05), a análise LL(1) inteira deve
+  ser refeita e registrada.
+
 ---
 
 # Parte 2 — Ambiguidades do material
@@ -523,10 +541,11 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Posição atual (provisória):** bytes ≥ 0x80 só dentro de string/comentário; ID segue ASCII.
 - **Impacto:** reconhecedores de STRING/comentário; testes com arquivos UTF-8 e ANSI.
 
-## AMB-09 · Comando iniciado por identificador (risco LL(1) antecipado) — RESOLVIDA na gramática (Fase C, DEC-36/DEC-37); confirmação formal na Fase D
+## AMB-09 · Comando iniciado por identificador (risco LL(1) antecipado) — RESOLVIDA (Fase C, DEC-36/DEC-37) e CONFIRMADA formalmente (Fase D, DEC-47)
 
 > **Resolução (Fase C):** fatoração `ID <cauda_comando_id>` (comando) e `ID <cauda_primario>` (expressão).
-> Nenhum conflito óbvio na análise qualitativa (`gramatica.md` §17); FIRST/FOLLOW formal fica para a Fase D.
+> **Confirmação (Fase D):** SELECT(P45..P47) = `ATRIBUICAO`, `ABRE_COL`, `ABRE_PAR`; SELECT(P48) = C ∪ F
+> (15 tokens); interseções vazias. Idem para P89–P91 (`analise-ll1.md` §9.1–§9.3).
 
 - **Problema:** atribuição (`x <- ...`), atribuição a vetor (`v[i] <- ...`) e chamada de procedimento
   (`linha_decorativa`, `mostrar_erro(...)`) **começam todos com ID**; chamada sem parênteses é

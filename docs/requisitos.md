@@ -128,7 +128,7 @@ Somente referências; origens inalteradas. As decisões da Fase C são `GRUPO` (
 | REQ-33 (preditivo LL(1), decisão do grupo) | §12 (fatoração), §17 (pontos para a Fase D) |
 | REQ-35 (sem semântica) | §16 — limitações sintáticas vs. semânticas |
 | REQ-41 (GLC) | §6 — P01–P91 |
-| REQ-42 (sem recursão à esquerda, fatorada; FIRST/FOLLOW) | §17 (auditoria feita); FIRST/FOLLOW na Fase D |
+| REQ-42 (sem recursão à esquerda, fatorada; FIRST/FOLLOW) | §17 (auditoria feita); FIRST/FOLLOW/SELECT e prova LL(1) em `analise-ll1.md` (Fase D, DEC-47) |
 
 ## Restrições de processo do grupo (todas as sessões)
 

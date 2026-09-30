@@ -813,3 +813,21 @@ pertence ao FIRST das caudas de expressão. Pela análise qualitativa acima, nã
 5. `MENOS` aparece só em P62; `OP_REL` só em P74; `OU` só em P71.
 6. As decisões DEC-28 a DEC-46 são o comportamento esperado; a Fase E derivará delas os testes positivos
    e negativos (§13, §15).
+
+## 19. Validação LL(1) — Fase D
+
+**Resultado: a GLC P01–P91 é LL(1) para o vocabulário congelado.** Nenhuma produção foi alterada
+(DEC-47). Demonstração completa em [`analise-ll1.md`](analise-ll1.md):
+
+- **nullable** calculado por ponto fixo: 17 não-terminais anuláveis (os mesmos da §17, obtidos de forma
+  independente); produções ε: P06 P09 P13 P22 P27 P31 P35 P48 P52 P57 P60 P67 P72 P75 P78 P81 P91;
+- **FIRST** e **FOLLOW** dos 50 não-terminais; `$` (marcador metalinguístico, correspondente ao futuro
+  `TOKEN_EOF`) só em FOLLOW(`<programa>`);
+- **SELECT** de cada uma das 91 produções;
+- **conflitos:** 24 não-terminais com alternativas, 85 pares comparados, **todas as interseções vazias**;
+- **tabela preditiva:** 281 células, nenhuma com duas produções;
+- os pontos quentes da §17 (`<cauda_comando_id>`, `<cauda_primario>`, caudas de expressão, fim das listas
+  sem quebra de linha) foram verificados formalmente.
+
+Estado: **GLC congelada e validada**. Qualquer mudança futura exige emenda registrada e repetição da
+análise LL(1).

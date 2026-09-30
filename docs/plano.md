@@ -9,7 +9,7 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 | A.1 | Conferência contra o PDF oficial — **CONCLUÍDA** após o commit desta fase | correções factuais em `docs/`, README, readme.txt | — |
 | B | Especificação lexical formal — **CONCLUÍDA** | `docs/especificacao-lexica.md` (ERs, tokens, atributos, formato de saída) | 1 (20%) |
 | C | Gramática Livre de Contexto — **CONCLUÍDA** | `docs/gramatica.md` | 1 (20%) |
-| D | FIRST / FOLLOW / nullable + verificação LL(1) | seção em `gramatica.md` | 1 → 3 |
+| D | FIRST / FOLLOW / nullable + verificação LL(1) — **CONCLUÍDA** | `docs/analise-ll1.md` (+ resumo em `gramatica.md` §19) | 1 → 3 |
 | E | Casos de teste derivados da gramática | `testes/` + `docs/testes.md` | 2 e 3 |
 | F | Analisador léxico | `obterToken()`, TS, saída tela/arquivo | 2 (40%) |
 | G | Analisador sintático | funções por não-terminal, `nextToken()`, derivação | 3 (40%) |
@@ -71,16 +71,22 @@ Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Conte
   conservadora), AMB-06 (sem subtração; `MENOS` só no passo), AMB-09 (fatoração).
 - **Fora do escopo cumprido:** nenhum código C, nenhum parser/lexer, nenhuma tabela FIRST/FOLLOW.
 
-## Fase D — FIRST/FOLLOW e LL(1)  — PRÓXIMA
+## Fase D — FIRST/FOLLOW e LL(1)  — CONCLUÍDA
 
-- Calcular nullable, FIRST, FOLLOW sobre P01–P91; montar a tabela preditiva; procurar conflitos.
-- **Pontos de atenção conhecidos:** `gramatica.md` §17 — primeiro `<cauda_comando_id>` e
-  `<cauda_primario>` (AMB-09), depois as caudas de expressão e o fim das listas de comandos.
-- Conflito encontrado → emenda registrada (nova DEC), nunca reescrita silenciosa da GLC.
-- **Critério de saída:** gramática LL(1) sem conflitos, ou conflitos resolvidos na gramática.
+- **Saída:** `docs/analise-ll1.md` (IDs `LL1-01`…`LL1-19`); resumo em `gramatica.md` §19; DEC-47.
+- **Resultado:** 17 anuláveis; FIRST/FOLLOW dos 50 não-terminais; SELECT das 91 produções; 24
+  não-terminais com alternativas, 85 pares comparados, **0 conflitos**; tabela preditiva com 281 células,
+  nenhuma duplicada. **A GLC é LL(1); nenhuma produção foi alterada.**
+- Pontos quentes da Fase C verificados formalmente: `<cauda_comando_id>`, `<cauda_primario>`, caudas de
+  expressão, fim das listas sem quebra de linha.
+- **Fora do escopo cumprido:** nenhum código, nenhum parser/lexer, nenhum teste executável.
+- **Critério de saída:** gramática LL(1) sem conflitos — **atendido** (sem emenda).
 
-## Fase E — Testes derivados
+## Fase E — Testes derivados  — PRÓXIMA
 
+- Base: `especificacao-lexica.md` (regras `LEX-nn`, §18 casos-limite), `gramatica.md` (§13 cobertura,
+  §15 rejeitadas) e `analise-ll1.md` (§13 mapa de decisão: cada entrada da tabela é um caso positivo; cada
+  célula vazia relevante, um caso de erro sintático).
 - Programas válidos (um por construção confirmada) e inválidos (um por tipo de erro esperado).
 - Casos léxicos: lexemas com/sem espaço, `..` entre inteiros, string não fechada, caractere inválido,
   comentário no EOF sem `\n`, acentos.

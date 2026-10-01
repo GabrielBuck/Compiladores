@@ -10,14 +10,15 @@ do enunciado.
 
 ## Estado atual
 
-**Fases A, A.1, B, C, D, E e F concluídas.** O `compilador.c` implementa **somente o analisador léxico**;
-o analisador sintático **não existe ainda**. A próxima fase é a **G (analisador sintático)**.
+**Fases A, A.1, B, C, D, E, F e G concluídas.** O `compilador.c` implementa o analisador léxico e o
+analisador sintático descendente recursivo preditivo LL(1), integrados sob demanda. A próxima fase é a
+**H (auditoria completa de integração)**.
 
 | Etapa do enunciado | Peso | Situação |
 |---|---|---|
 | 1 — ERs + GLC | 20% | **concluída documentalmente e validada**: ERs (`docs/especificacao-lexica.md`), GLC (`docs/gramatica.md`), FIRST/FOLLOW e LL(1) (`docs/analise-ll1.md`) |
 | 2 — Analisador léxico | 40% | **implementado e testado** (`compilador.c`): suíte léxica 9/9 + 9/9, e os 44 arquivos sintáticos tokenizam sem erro léxico. Ver `docs/arquitetura.md` e `docs/testes.md` §16 |
-| 3 — Analisador sintático | 40% | implementação **não iniciada**; **testes sintáticos prontos** (`testes/sintatico/`, 19 válidos + 20 erros + 5 limitações) |
+| 3 — Analisador sintático | 40% | **implementado e testado** (`compilador.c`): 19/19 válidos aceitos, 20/20 erros detectados no primeiro token/linha esperados e 5/5 limitações aceitas; árvore textual em `arvore.txt` |
 
 ## Abordagem (decisões do grupo)
 
@@ -44,9 +45,13 @@ gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
 .\compilador.exe programa.alg      # Windows
 ```
 
-O nome do arquivo MiniVisualg é sempre recebido por linha de comando. **Por enquanto o programa só faz a
-análise léxica:** mostra os tokens na tela e grava os mesmos em `tokens.txt` (diretório atual; não é versionado).
-Compilado e testado com `gcc 15.2.0` (MSYS2 mingw64): 0 erros e 0 warnings. Exige C99 ou posterior.
+O nome do arquivo MiniVisualg é sempre recebido por linha de comando. O programa mostra os tokens na tela,
+grava a mesma listagem lexical em `tokens.txt` e escreve a árvore de derivação textual em `arvore.txt`
+(ambos no diretório atual e não versionados). Em erro sintático, `arvore.txt` fica parcial e contém
+`<ERRO SINTATICO>`.
+Compilado e testado com `gcc 15.2.0` (MSYS2 mingw64): 0 erros e 0 warnings. O comando oficial, sem
+`-std`, funciona; o código usa recursos padronizados em C11 (`_Static_assert`). O GCC testado também o
+aceitou em modos GNU anteriores compatíveis, como `-std=gnu99`, por extensão do compilador.
 
 ## Documentação (`docs/`)
 
@@ -58,7 +63,7 @@ Compilado e testado com `gcc 15.2.0` (MSYS2 mingw64): 0 erros e 0 warnings. Exig
 | [gramatica.md](docs/gramatica.md) | **GLC congelada (Fase C):** 91 produções em BNF, sem recursão à esquerda, fatorada; cobertura do Anexo I; derivações manuais. |
 | [analise-ll1.md](docs/analise-ll1.md) | **Validação LL(1) (Fase D):** nullable, FIRST, FOLLOW, SELECT, conflitos, tabela preditiva e mapa de decisão do parser. |
 | [testes.md](docs/testes.md) | **Suíte de testes (Fase E):** matrizes, pontos de falha esperados, cobertura de P01–P91, terminais, `LEX-nn` e DEC. Arquivos em [`testes/`](testes/). |
-| [arquitetura.md](docs/arquitetura.md) | **Arquitetura do analisador léxico (Fase F):** organização de `compilador.c`, `Token`, ownership, catálogos, leitor, encoding, saída, erros. |
+| [arquitetura.md](docs/arquitetura.md) | **Arquitetura dos analisadores (Fases F/G):** lexer, parser LL(1), lookahead, ownership, SELECT, erros e árvore. |
 | [decisoes.md](docs/decisoes.md) | Decisões do grupo e ambiguidades do material em aberto. |
 | [plano.md](docs/plano.md) | Fases A–J e critérios de saída. |
 

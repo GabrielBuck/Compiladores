@@ -1,20 +1,22 @@
-# Arquitetura do analisador léxico — Fase F
+# Arquitetura dos analisadores léxico e sintático — Fases F e G
 
-> **Escopo:** este documento descreve **apenas o que está implementado** em `compilador.c`: o analisador
-> léxico. O analisador sintático **não existe ainda** (Fase G). O contrato que o código cumpre está em
-> `especificacao-lexica.md`; os testes, em `testes.md`. **O código não define a linguagem**: onde houve
-> dúvida, valeu o contrato.
+> **Escopo:** este documento descreve o que está implementado em `compilador.c`: o analisador léxico da
+> Fase F e o analisador sintático da Fase G. O contrato lexical está em `especificacao-lexica.md`; a GLC
+> em `gramatica.md`; os conjuntos SELECT em `analise-ll1.md`; os testes em `testes.md`. **O código não
+> define a linguagem**: onde houver divergência, valem esses documentos normativos.
 
 ## 1. Visão geral
 
-Um único arquivo, `compilador.c` (REQ-08), com um módulo léxico de estado encapsulado. A interface pública é
-`Token obterToken(void)` (nome do enunciado, REQ-28/REQ-32); o parser da Fase G terá um `nextToken()` que a
-chamará sob demanda.
+Um único arquivo, `compilador.c` (REQ-08), com lexer e parser integrados sob demanda. A interface lexical é
+`Token obterToken(void)` (nome do enunciado, REQ-28/REQ-32); o parser chama essa função exclusivamente por
+`nextToken()`, mantendo um único token de lookahead.
 
 ```
 arquivo .alg --(fopen "rb")--> Scanner (lookahead) --> reconhecedores --> Token --> emitirToken --> tela + tokens.txt
                                       ^                      |                         |
                                       |                SymbolTable (só IDs)      (devolvido a quem chamou)
+                                      |
+                               nextToken() <-- parser LL(1) --> arvore.txt
 ```
 
 ## 2. Organização de `compilador.c`
@@ -35,10 +37,15 @@ arquivo .alg --(fopen "rb")--> Scanner (lookahead) --> reconhecedores --> Token 
 | 12 | Lexemas fixos | `buscarSimboloMaisLongo`, `lerSimbolo`, `erroCaractereInvalido` |
 | 13 | `obterToken` | `pularEspacosEComentarios`, `obterToken` |
 | 14 | Ciclo de vida | `iniciarAnalisadorLexico`, `fecharAnalisadorLexico` |
-| 15 | Driver e `main` | `executarAnaliseLexica`, `main` |
+| 15 | Infraestrutura sintática | árvore, erro, `nextToken`, `consome`, EOF e conjuntos SELECT reutilizados |
+| 16 | Protótipos | as 50 funções de não-terminal |
+| 17 | Programa, declarações e rotinas | implementações de P01–P32 |
+| 18 | Comandos e argumentos | implementações de P33–P67 |
+| 19 | Expressões | implementações de P68–P91 |
+| 20 | Driver integrado e `main` | `executarAnaliseSintatica`, ciclo de vida e argumentos |
 
-Há cerca de 880 linhas (grande parte são os catálogos e o enum). Todas as funções cabem em uma tela. Não há `lexer.c`, `.h`, Makefile nem biblioteca externa
-(DEC-02).
+Não há `lexer.c`, `.h`, Makefile nem biblioteca externa (DEC-02). As 50 funções curtas do parser mantêm a
+rastreabilidade direta entre não-terminal, produção Pxx, SELECT e teste.
 
 ## 3. Tokens
 
@@ -195,14 +202,14 @@ do Windows foi usada para "embelezar" o terminal.
 main
   argc != 2                  -> "uso: ..." em stderr, status != 0
   iniciarAnalisadorLexico(p) -> abre fonte ("rb") e tokens.txt ("wb"); linha = 1; TS vazia
-  executarAnaliseLexica()    -> obterToken() até TOKEN_EOF, liberarToken() a cada volta   [driver temporário]
+  executarAnaliseSintatica() -> abre arvore.txt; nextToken(); programa(); exigirFimArquivo()
+                             -> fecha a árvore e libera o lookahead (inclusive TOKEN_EOF)
   fecharAnalisadorLexico()   -> fecha os dois arquivos, libera a TS (pode ser chamada de novo sem efeito)
   return EXIT_SUCCESS
 ```
 
 Fonte inexistente: mensagem em stderr, **sem** criar `tokens.txt`, status ≠ 0 (não é erro léxico).
-`executarAnaliseLexica()` **não é o parser**: é só o laço que existe enquanto o parser não existe e será
-substituído na Fase G.
+Falha ao criar `arvore.txt`: mensagem em stderr, fechamento do lexer e status ≠ 0.
 
 ## 13. Linha do `TOKEN_EOF` (DEC-54, resolve parte de AMB-14)
 
@@ -217,9 +224,10 @@ Verificado com um harness descartável: `a` sem `\n` final → EOF na linha 1; `
   (adicionado ao `PATH` apenas na sessão; nada foi instalado).
 - **Resultado:** 0 erros, 0 warnings (o `gcc` não imprimiu nenhuma mensagem). Também limpo, só como inspeção,
   com `-Wextra -Wpedantic -Wshadow`.
-- **Dialeto:** compila limpo em `-std=gnu99`, `gnu11`, `gnu17` e `c11`. **Exige C99 ou posterior**
-  (declaração no `for`, `<stdbool.h>`) e usa `_Static_assert` (C11, aceito pelo `gcc` como extensão em C99).
-  O modo `-std=gnu89` (padrão de `gcc` anterior à versão 5) **não** compila. Só foi testado com o GCC 15.2.0.
+- **Dialeto:** o comando oficial, sem `-std`, compila; o código usa recursos padronizados em **C11**, em
+  especial `_Static_assert`. O GCC 15.2.0 testado também compilou em modos GNU anteriores compatíveis,
+  como `-std=gnu99`, aceitando `_Static_assert` como extensão, além de `gnu11`, `gnu17` e `c11`. O modo
+  `-std=gnu89` (padrão de `gcc` anterior à versão 5) **não** compila. Só foi testado com o GCC 15.2.0.
 - Não há `locale`: `strtod` usa a localidade `"C"` (ponto decimal), que é o padrão do programa.
 
 ## 15. Revisão de memória (manual)
@@ -236,3 +244,87 @@ Sem AddressSanitizer neste MinGW (`-lasan` ausente) e sem Valgrind, a revisão f
 
 Limite desta revisão: não houve execução sob ferramenta de memória. O comportamento foi exercitado com 20 005
 tokens, lexemas de 200 000 e 300 000 bytes e 20 000 identificadores distintos, sem falhas.
+
+## 16. Analisador sintático — Fase G
+
+### 16.1 Técnica e estado
+
+O parser é **descendente recursivo preditivo LL(1)**, sem backtracking e com um único lookahead (DEC-03,
+DEC-57). Há exatamente uma função para cada um dos 50 não-terminais de `gramatica.md`; as funções aplicam
+literalmente P01–P91. `abrirNo("<nome>", n)` registra a produção Pnn escolhida, mantendo a cadeia
+gramática → SELECT → código → árvore → teste.
+
+Estado sintático:
+
+```c
+static Token lookahead;
+static bool lookahead_valido;
+static FILE *arvore_output;
+static int profundidade_arvore;
+```
+
+Não há fila nem pré-tokenização. O parser não lê o arquivo-fonte e não chama `fgetc`.
+
+### 16.2 `nextToken()`, `consome()` e ownership
+
+`nextToken()` é a **única função do parser** que chama `obterToken()`. Se o lookahead anterior é válido,
+ela o libera com `liberarToken()`, marca-o inválido e só então solicita o próximo. Assim cada lexema tem
+um único dono e é liberado exatamente uma vez. Se o lexer encerrar durante a obtenção do token seguinte,
+o anterior já foi liberado e a árvore aberta é fechada pelo cleanup comum.
+
+`consome(esperado)` compara `lookahead.type`, registra a folha da árvore **antes** de liberar o lexema e
+chama `nextToken()` somente quando há casamento. O token incorreto nunca é consumido. A árvore não guarda
+ponteiros: o texto relevante é escrito imediatamente em `arvore.txt`.
+
+### 16.3 Escolha por SELECT e ε estrito
+
+Toda alternativa usa o mapa de `analise-ll1.md` §13. As 17 produções vazias — P06, P09, P13, P22, P27,
+P31, P35, P48, P52, P57, P60, P67, P72, P75, P78, P81 e P91 — são escolhidas **somente** quando o
+lookahead pertence ao SELECT formal daquela produção (DEC-58). Não há `default -> ε`.
+
+Os conjuntos recorrentes foram codificados por predicados pequenos:
+
+- `ehInicioComando`: C = `ID LEIA ESCREVA ESCREVAL SE PARA ENQUANTO RETORNE`;
+- `ehFimListaComandos`: F = os sete fechamentos de bloco;
+- `estaEmX`: FOLLOW de `<expressao>` = C ∪ F ∪ `ATE PASSO FACA FECHA_PAR FECHA_COL VIRGULA`;
+- P75, P78, P81 e P91 estendem X exatamente com os operadores dos níveis inferiores.
+
+Qualquer token fora dos SELECTs aplicáveis chama `erroSintatico()` imediatamente, preservando o primeiro
+token incorreto previsto pela tabela LL(1).
+
+### 16.4 Erro, EOF e cleanup
+
+Formato (DEC-59):
+
+```text
+ERRO SINTÁTICO - linha <n> - token: <NOME> - esperado: <...>
+```
+
+O nome é a classe lexical (`OP_REL`, não `GE`). A mensagem vai **somente para stdout** (DEC-60):
+`tokens.txt` continua contendo apenas tokens. Antes de `exit(EXIT_SOURCE_ERROR)`, o parser registra
+`<ERRO SINTATICO>` na árvore, fecha `arvore.txt`, libera o lookahead, fecha fonte/saída lexical e libera a
+tabela de símbolos. `EXIT_SOURCE_ERROR` continua provisoriamente 0 por AMB-13.
+
+A GLC termina em `FIMALGORITMO`. Como `consome(FIMALGORITMO)` solicita o token seguinte,
+`exigirFimArquivo()` exige `TOKEN_EOF` sem avançar outra vez (DEC-46). No caminho normal,
+`fecharAnalisadorSintatico()` libera esse EOF uma única vez; qualquer token restante é erro sintático.
+
+### 16.5 Árvore de derivação textual
+
+AMB-07 foi resolvida pela implementação de uma árvore textual em `arvore.txt` (DEC-61/DEC-62), escrita
+diretamente durante o parsing — não existe `struct Node`, AST ou dado semântico. A ordem é pré-ordem e a
+expansão da RHS ocorre da esquerda para a direita, acompanhando a derivação mais à esquerda:
+
+1. imprime `<nao_terminal> [Pnn]`;
+2. aumenta a indentação;
+3. imprime terminais e chamadas dos não-terminais na ordem da produção;
+4. imprime `ε` como filho nas produções vazias;
+5. restaura a indentação.
+
+Em erro, o arquivo fica deliberadamente parcial e recebe `<ERRO SINTATICO>` no ponto alcançado. O arquivo
+é aberto com `"wb"`, sobrescrito a cada execução e não é misturado com stdout nem com `tokens.txt`.
+
+### 16.6 Limite sintaxe/semântica
+
+O parser não verifica declaração, tipo, escopo, categoria do identificador, assinatura, aridade compatível,
+índice inteiro nem contexto de `RETORNE`. Os cinco SY-L continuam aceitos; não há AST nem análise semântica.

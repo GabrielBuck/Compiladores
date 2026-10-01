@@ -1,7 +1,8 @@
-# Artefatos de compilacao e execucao (Fase F)
+# Artefatos de compilacao e execucao (Fases F/G)
 compilador
 compilador.exe
 tokens.txt
+arvore.txt
 *.o
 *.obj
 *.exe

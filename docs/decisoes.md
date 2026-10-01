@@ -124,13 +124,12 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
 - **Impacto:** o parser não precisa de sincronização; o teste de erro verifica mensagem + linha. O
   critério de aprovação do teste de erro **não** inclui o exit status até a AMB-13 ser resolvida.
 
-## DEC-11 · Derivação registrada sem AST  — PROVISÓRIA (Fase G)
+## DEC-11 · Derivação registrada sem AST  — DECIDIDA na Fase G (detalhada por DEC-61/DEC-62)
 
 - **Problema:** árvore de derivação é expectativa das aulas, pouco explícita no enunciado (AMB-07).
-- **Decisão provisória:** o parser é projetado para *poder* registrar a derivação (por ex. imprimindo
-  a produção usada em cada função de não-terminal), sem construir AST. Se vai ser obrigatório na
-  entrega, decide-se na Fase G.
-- **Impacto:** cada função de não-terminal tem um único ponto onde a produção escolhida é conhecida.
+- **Decisão:** o parser registra a derivação textual, sem construir AST.
+- **Impacto:** cada função de não-terminal registra a produção escolhida; formato e destino estão em
+  DEC-61/DEC-62.
 
 ## DEC-12 · Documentação com rastreabilidade  — DECIDIDA
 
@@ -491,6 +490,61 @@ Todas são `GRUPO`. Detalhe de implementação em `arquitetura.md`. Nenhuma alte
 - **Justificativa:** quando o parser chamar `obterToken()` sob demanda (Fase G), a listagem exigida continuará
   saindo automaticamente. Resolve a dúvida de DEC-04 sobre onde a listagem é produzida.
 
+## Decisões da Fase G — implementação do analisador sintático (DEC-57 a DEC-63)
+
+Todas são `GRUPO`. A gramática P01–P91 e os conjuntos SELECT não foram alterados.
+
+## DEC-57 · Lookahead único e ownership  — DECIDIDA
+
+- **Decisão:** o parser mantém um `Token lookahead` e um `bool lookahead_valido`. `nextToken()` é a única
+  função sintática que chama `obterToken()`; antes do avanço, libera o token atual e o marca inválido.
+- **Justificativa:** implementa diretamente REQ-32/DEC-03 e deixa o dono de cada lexema inequívoco.
+- **Impacto:** sem fila e sem pré-tokenização; a folha da árvore é escrita antes do avanço; cleanup normal ou
+  de erro libera o lookahead, inclusive `TOKEN_EOF`, exatamente uma vez.
+
+## DEC-58 · Produção ε somente pelo SELECT formal  — DECIDIDA
+
+- **Decisão:** cada uma das 17 produções ε tem teste explícito do conjunto SELECT publicado em
+  `analise-ll1.md`; token fora das alternativas aplicáveis gera erro imediatamente.
+- **Justificativa:** evita esconder um token inválido como ε e preserva o primeiro erro formal da tabela LL(1).
+- **Impacto:** não existe `default -> ε`; C, F e X são predicados nomeados e as caudas de expressão estendem
+  esses conjuntos exatamente como P72, P75, P78, P81 e P91 exigem.
+
+## DEC-59 · Formato do erro sintático  — DECIDIDA
+
+- **Decisão:** `ERRO SINTÁTICO - linha <n> - token: <NOME> - esperado: <...>`.
+- **Justificativa:** contém os dados exigidos por REQ-31 e acrescenta expectativa útil sem alterar o token.
+- **Impacto:** o nome é a classe lexical (`OP_REL`, não o atributo `GE`); EOF aparece como `EOF`.
+
+## DEC-60 · Erro sintático somente em stdout  — DECIDIDA
+
+- **Decisão:** a mensagem sintática vai a stdout e não a `tokens.txt`.
+- **Justificativa:** `tokens.txt` é a saída lexical; misturar um diagnóstico do parser quebraria esse contrato.
+- **Impacto:** stdout contém os tokens já solicitados e, por último, o erro; o arquivo contém apenas os tokens.
+
+## DEC-61 · Árvore de derivação textual em pré-ordem  — DECIDIDA (resolve AMB-07)
+
+- **Decisão:** gerar uma representação textual indentada, em pré-ordem e derivação mais à esquerda, com
+  `<nao_terminal> [Pnn]`, terminais e `ε`. Em erro, acrescentar `<ERRO SINTATICO>` à árvore parcial.
+- **Justificativa:** atende à expectativa pedagógica das aulas sem criar AST ou estrutura semântica.
+- **Impacto:** a árvore é escrita diretamente durante o parsing; não há `struct Node` nem ponteiro de lexema
+  guardado depois de `nextToken()`.
+
+## DEC-62 · `arvore.txt` separado  — DECIDIDA
+
+- **Decisão:** a árvore vai para `arvore.txt` no diretório de trabalho, aberto com `"wb"` e sobrescrito a
+  cada execução; o arquivo entra no `.gitignore`.
+- **Justificativa:** preserva stdout como listagem lexical/diagnóstico e `tokens.txt` como artefato lexical.
+- **Impacto:** programa válido produz árvore completa; programa inválido produz árvore parcial marcada.
+
+## DEC-63 · `main` executa lexer e parser integrados  — DECIDIDA
+
+- **Decisão:** substituir o driver lexical temporário por `executarAnaliseSintatica()`: abrir a árvore,
+  `nextToken()`, `programa()`, `exigirFimArquivo()`, liberar lookahead e fechar a árvore.
+- **Justificativa:** cumpre a integração sob demanda já fixada em REQ-32/DEC-04.
+- **Impacto:** `FIMALGORITMO` não basta se houver lixo depois; `TOKEN_EOF` é exigido e não é avançado. Erro
+  sintático usa o mesmo `EXIT_SOURCE_ERROR` provisório de AMB-13; falhas operacionais continuam não zero.
+
 ---
 
 # Parte 2 — Ambiguidades do material
@@ -583,12 +637,15 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   forma negativa na gramática é sintaxe, não análise semântica.
 - **Impacto:** ER de número, gramática de expressão e de `passo`. Decidir na Fase B/C.
 
-## AMB-07 · Árvore de derivação — EM ABERTO (ver DEC-11)
+## AMB-07 · Árvore de derivação — RESOLVIDA na Fase G (DEC-61/DEC-62)
+
+> **Resolução (Fase G):** árvore textual indentada em `arvore.txt`, escrita em pré-ordem, com Pxx,
+> terminais e `ε`; parcial e marcada em erro. Não há AST nem análise semântica.
 
 - **Problema:** as aulas listam "gerar árvore de derivação" como tarefa do parser; a lista formal da
   Etapa 3 do enunciado não é tão clara.
 - **Classificação:** expectativa das aulas, **não** requisito inequívoco do enunciado.
-- **Impacto:** formato da saída do parser. Decidir na Fase G.
+- **Impacto:** formato da saída do parser definido pelas decisões acima.
 
 ## AMB-08 · Codificação de caracteres (acentos) — RESOLVIDA OPERACIONALMENTE na Fase F (DEC-48)
 
@@ -753,7 +810,7 @@ Itens que o material não resolve e que o grupo só decide por conta própria se
 | AMB-06 subtração binária | **Decidida (DEC-33/DEC-34):** sem subtração; `MENOS` só no passo. Revisável. |
 | DEC-38 `retorne` fora de função | Aceito sintaticamente (limitação contextual documentada). |
 | DEC-43 limites de `para` | `<expressao>` em vez de literal; revisável. |
-| AMB-07 árvore de derivação obrigatória? | Aulas pedem; enunciado não é claro (Fase G). |
+| AMB-07 árvore de derivação obrigatória? | **Resolvida (DEC-61/DEC-62):** árvore textual em `arvore.txt`, sem AST. |
 | AMB-10 parênteses em `se`/`enquanto` | Decidido de forma conservadora; revisável. |
 | AMB-11 seguir a Figura 2 literalmente? | **Resolvida (formato vs. vocabulário)**, revisável: o enunciado a apresenta como ilustrativa. |
 | AMB-12 nome do token (`ID`/`IDENTIFICADOR`) | **Decidida (DEC-17: `ID`).** O enunciado usa ambos nos exemplos; não se afirma que o outro esteja errado. |

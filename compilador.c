@@ -9,12 +9,12 @@
  *
  * Profa. Daniela Cunha
  *
- * Estado atual (Fase F): somente o ANALISADOR LEXICO esta implementado.
- * O contrato lexico esta em docs/especificacao-lexica.md; a arquitetura deste
- * arquivo esta em docs/arquitetura.md.
+ * Estado atual (Fase G): analisadores LEXICO e SINTATICO implementados.
+ * O contrato lexico esta em docs/especificacao-lexica.md; a GLC e os conjuntos
+ * SELECT estao em docs/gramatica.md e docs/analise-ll1.md.
  *
  * Compilar:  gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
- * Executar:  compilador arquivo.alg      (gera tokens.txt e repete na tela)
+ * Executar:  compilador arquivo.alg      (gera tokens.txt e arvore.txt)
  */
 
 /* ======================================================================== */
@@ -29,11 +29,13 @@
 #include <string.h>
 
 #define ARQUIVO_SAIDA_TOKENS "tokens.txt"
+#define ARQUIVO_SAIDA_ARVORE "arvore.txt"
 
 /*
- * Codigos de saida. AMB-13 (codigo de retorno em erro lexico) segue ABERTA:
+ * Codigos de saida. AMB-13 (codigo de retorno em erro de fonte) segue ABERTA:
  * o criterio de avaliacao penaliza retorno diferente de 0, entao, ate haver
- * esclarecimento da professora, um erro lexico IDENTIFICADO e encerrado com
+ * esclarecimento da professora, um erro lexico ou sintatico IDENTIFICADO e
+ * encerrado com
  * 0. Para trocar a politica basta mudar esta linha. Falhas operacionais
  * (argumentos, arquivo, memoria, representacao numerica) usam sempre != 0.
  */
@@ -292,11 +294,18 @@ static Scanner scanner;
 static SymbolTable symbol_table;
 static FILE *token_output;
 
+/* Estado do parser: um unico lookahead e escrita direta da arvore em pre-ordem. */
+static Token lookahead;
+static bool lookahead_valido;
+static FILE *arvore_output;
+static int profundidade_arvore;
+
 /* ======================================================================== */
 /* 6. Erros operacionais e utilidades de memoria/string                      */
 /* ======================================================================== */
 
 static void fecharAnalisadorLexico(void);
+static void fecharAnalisadorSintatico(void);
 
 /*
  * Falha operacional (memoria, leitura, representacao): NAO e erro lexico.
@@ -305,6 +314,7 @@ static void fecharAnalisadorLexico(void);
 static void erroOperacional(const char *mensagem)
 {
     fprintf(stderr, "ERRO INTERNO - %s\n", mensagem);
+    fecharAnalisadorSintatico();
     fecharAnalisadorLexico();
     exit(EXIT_OPERATIONAL_ERROR);
 }
@@ -515,7 +525,7 @@ static void formatarToken(const Token *token, FILE *destino)
     fprintf(destino, "%d# %s", token->line, TOKEN_NAMES[token->type]);
     switch (token->attribute_kind) {
     case ATTR_SYMBOL_INDEX:
-        fprintf(destino, " | %lu", (unsigned long)token->attribute.table_index);
+        fprintf(destino, " | %zu", token->attribute.table_index);
         break;
     case ATTR_INT:
     case ATTR_REAL:
@@ -558,6 +568,7 @@ static void erroLexico(int line, LexemeBuffer *sequencia)
     formatarErroLexico(stdout, line, sequencia);
     formatarErroLexico(token_output, line, sequencia);
     bufferLiberar(sequencia);
+    fecharAnalisadorSintatico();
     fecharAnalisadorLexico();
     exit(EXIT_SOURCE_ERROR);
 }
@@ -850,20 +861,1032 @@ static void fecharAnalisadorLexico(void)
 }
 
 /* ======================================================================== */
-/* 15. Driver temporario da Fase F e main                                    */
+/* 15. Infraestrutura do analisador sintatico                                */
 /* ======================================================================== */
 
-/* Sem parser ainda: apenas pede tokens ate EOF. Sera substituido pelo analisador sintatico (Fase G). */
-static void executarAnaliseLexica(void)
+static void escreverIndentacao(void)
 {
-    for (;;) {
-        Token token = obterToken();
-        bool fim = (token.type == TOKEN_EOF);
-        liberarToken(&token);
-        if (fim) {
-            break;
-        }
+    for (int i = 0; i < profundidade_arvore; i++) {
+        fputs("  ", arvore_output);
     }
+}
+
+/* Registra o nao-terminal e a producao escolhida antes de expandir a RHS. */
+static void abrirNo(const char *nome, int producao)
+{
+    escreverIndentacao();
+    fprintf(arvore_output, "%s [P%02d]\n", nome, producao);
+    profundidade_arvore++;
+}
+
+static void fecharNo(void)
+{
+    profundidade_arvore--;
+}
+
+/* A folha e escrita enquanto o lexema ainda pertence ao lookahead. */
+static void registrarTerminal(const Token *token)
+{
+    escreverIndentacao();
+    fputs(TOKEN_NAMES[token->type], arvore_output);
+    switch (token->type) {
+    case TOKEN_ID:
+    case TOKEN_NUM_INT:
+    case TOKEN_NUM_REAL:
+    case TOKEN_STRING:
+    case TOKEN_OP_REL:
+    case TOKEN_OP_MULT:
+        fprintf(arvore_output, " %s", token->lexeme);
+        break;
+    default:
+        break;
+    }
+    fputc('\n', arvore_output);
+}
+
+static void registrarEpsilon(void)
+{
+    escreverIndentacao();
+    fputs("\xCE\xB5\n", arvore_output); /* epsilon em UTF-8 */
+}
+
+static void registrarErroNaArvore(void)
+{
+    if (arvore_output != NULL) {
+        escreverIndentacao();
+        fputs("<ERRO SINTATICO>\n", arvore_output);
+    }
+}
+
+/* Libera exatamente uma vez o lookahead e fecha a arvore, se existirem. */
+static void fecharAnalisadorSintatico(void)
+{
+    if (lookahead_valido) {
+        liberarToken(&lookahead);
+        lookahead_valido = false;
+    }
+    if (arvore_output != NULL) {
+        fclose(arvore_output);
+        arvore_output = NULL;
+    }
+    profundidade_arvore = 0;
+}
+
+/* Erro sintatico fica apenas em stdout; tokens.txt continua sendo saida lexical. */
+static void erroSintatico(const char *esperado)
+{
+    registrarErroNaArvore();
+    printf("ERRO SINTÁTICO - linha %d - token: %s", lookahead.line,
+           TOKEN_NAMES[lookahead.type]);
+    if (esperado != NULL) {
+        printf(" - esperado: %s", esperado);
+    }
+    fputc('\n', stdout);
+    fecharAnalisadorSintatico();
+    fecharAnalisadorLexico();
+    exit(EXIT_SOURCE_ERROR);
+}
+
+/* Unica funcao do parser que chama obterToken(). */
+static void nextToken(void)
+{
+    if (lookahead_valido) {
+        liberarToken(&lookahead);
+        lookahead_valido = false;
+    }
+    lookahead = obterToken();
+    lookahead_valido = true;
+}
+
+/* Centraliza o casamento de terminais, a folha da arvore e o avanco. */
+static void consome(TokenName esperado)
+{
+    if (lookahead.type != esperado) {
+        erroSintatico(TOKEN_NAMES[esperado]);
+    }
+    registrarTerminal(&lookahead);
+    nextToken();
+}
+
+static void exigirFimArquivo(void)
+{
+    if (lookahead.type != TOKEN_EOF) {
+        erroSintatico("EOF");
+    }
+}
+
+/* FIRST(<comando>) = C, em docs/analise-ll1.md. */
+static bool ehInicioComando(TokenName tipo)
+{
+    return tipo == TOKEN_ID || tipo == TOKEN_KW_LEIA || tipo == TOKEN_KW_ESCREVA ||
+           tipo == TOKEN_KW_ESCREVAL || tipo == TOKEN_KW_SE || tipo == TOKEN_KW_PARA ||
+           tipo == TOKEN_KW_ENQUANTO || tipo == TOKEN_KW_RETORNE;
+}
+
+/* FOLLOW(<lista_comandos>) = F. */
+static bool ehFimListaComandos(TokenName tipo)
+{
+    return tipo == TOKEN_KW_FIMALGORITMO || tipo == TOKEN_KW_SENAO ||
+           tipo == TOKEN_KW_FIMSE || tipo == TOKEN_KW_FIMPARA ||
+           tipo == TOKEN_KW_FIMENQUANTO || tipo == TOKEN_KW_FIMPROCEDIMENTO ||
+           tipo == TOKEN_KW_FIMFUNCAO;
+}
+
+static bool ehInicioExpressao(TokenName tipo)
+{
+    return tipo == TOKEN_ID || tipo == TOKEN_NUM_INT || tipo == TOKEN_NUM_REAL ||
+           tipo == TOKEN_STRING || tipo == TOKEN_KW_VERDADEIRO ||
+           tipo == TOKEN_KW_FALSO || tipo == TOKEN_ABRE_PAR;
+}
+
+/* X = FOLLOW(<expressao>): C U F U fechamentos/separadores de expressao. */
+static bool estaEmX(TokenName tipo)
+{
+    return ehInicioComando(tipo) || ehFimListaComandos(tipo) || tipo == TOKEN_KW_ATE ||
+           tipo == TOKEN_KW_PASSO || tipo == TOKEN_KW_FACA || tipo == TOKEN_FECHA_PAR ||
+           tipo == TOKEN_FECHA_COL || tipo == TOKEN_VIRGULA;
+}
+
+static bool estaNoSelectP75(TokenName tipo)
+{
+    return estaEmX(tipo) || tipo == TOKEN_E || tipo == TOKEN_OU;
+}
+
+static bool estaNoSelectP78(TokenName tipo)
+{
+    return estaNoSelectP75(tipo) || tipo == TOKEN_OP_REL;
+}
+
+static bool estaNoSelectP81(TokenName tipo)
+{
+    return estaNoSelectP78(tipo) || tipo == TOKEN_MAIS;
+}
+
+static bool estaNoSelectP91(TokenName tipo)
+{
+    return estaNoSelectP81(tipo) || tipo == TOKEN_OP_MULT;
+}
+
+/* ======================================================================== */
+/* 16. Prototipos dos 50 nao-terminais                                       */
+/* ======================================================================== */
+
+static void programa(void);
+static void corpoPrograma(void);
+static void secaoVar(void);
+static void secaoVarOpcional(void);
+static void bloco(void);
+static void listaDeclaracoes(void);
+static void declaracao(void);
+static void listaIds(void);
+static void listaIdsCauda(void);
+static void tipoDecl(void);
+static void tipoVetor(void);
+static void tipoSimples(void);
+static void listaRotinas(void);
+static void rotina(void);
+static void procedimento(void);
+static void parametrosProcedimento(void);
+static void funcao(void);
+static void listaParametros(void);
+static void listaParametrosCauda(void);
+static void parametro(void);
+static void listaComandos(void);
+static void listaComandosCauda(void);
+static void comando(void);
+static void cmdId(void);
+static void caudaComandoId(void);
+static void cmdLeia(void);
+static void referencia(void);
+static void indiceOpcional(void);
+static void cmdEscreva(void);
+static void cmdEscreval(void);
+static void cmdSe(void);
+static void senaoOpcional(void);
+static void cmdPara(void);
+static void passoOpcional(void);
+static void numeroPasso(void);
+static void cmdEnquanto(void);
+static void cmdRetorne(void);
+static void listaArgumentos(void);
+static void listaArgumentosCauda(void);
+static void expressao(void);
+static void exprLogica(void);
+static void exprLogicaCauda(void);
+static void exprRelacional(void);
+static void exprRelCauda(void);
+static void exprAditiva(void);
+static void exprAditivaCauda(void);
+static void exprMult(void);
+static void exprMultCauda(void);
+static void primario(void);
+static void caudaPrimario(void);
+
+/* ======================================================================== */
+/* 17. Programa, declaracoes e sub-rotinas (P01-P32)                         */
+/* ======================================================================== */
+
+static void programa(void)
+{
+    if (lookahead.type != TOKEN_KW_ALGORITMO) {
+        erroSintatico("ALGORITMO");
+    }
+    abrirNo("<programa>", 1);
+    consome(TOKEN_KW_ALGORITMO);
+    consome(TOKEN_STRING);
+    corpoPrograma();
+    consome(TOKEN_KW_FIMALGORITMO);
+    fecharNo();
+}
+
+static void corpoPrograma(void)
+{
+    if (lookahead.type == TOKEN_KW_VAR) { /* P02 */
+        abrirNo("<corpo_programa>", 2);
+        secaoVar();
+        bloco();
+    } else if (lookahead.type == TOKEN_KW_PROCEDIMENTO ||
+               lookahead.type == TOKEN_KW_FUNCAO) { /* P03 */
+        abrirNo("<corpo_programa>", 3);
+        rotina();
+        listaRotinas();
+        secaoVarOpcional();
+        bloco();
+    } else {
+        erroSintatico("VAR, PROCEDIMENTO ou FUNCAO");
+    }
+    fecharNo();
+}
+
+static void secaoVar(void)
+{
+    if (lookahead.type != TOKEN_KW_VAR) {
+        erroSintatico("VAR");
+    }
+    abrirNo("<secao_var>", 4);
+    consome(TOKEN_KW_VAR);
+    listaDeclaracoes();
+    fecharNo();
+}
+
+static void secaoVarOpcional(void)
+{
+    if (lookahead.type == TOKEN_KW_VAR) { /* P05 */
+        abrirNo("<secao_var_opcional>", 5);
+        secaoVar();
+    } else if (lookahead.type == TOKEN_KW_INICIO) { /* P06: epsilon */
+        abrirNo("<secao_var_opcional>", 6);
+        registrarEpsilon();
+    } else {
+        erroSintatico("VAR ou INICIO");
+    }
+    fecharNo();
+}
+
+static void bloco(void)
+{
+    if (lookahead.type != TOKEN_KW_INICIO) {
+        erroSintatico("INICIO");
+    }
+    abrirNo("<bloco>", 7);
+    consome(TOKEN_KW_INICIO);
+    listaComandos();
+    fecharNo();
+}
+
+static void listaDeclaracoes(void)
+{
+    if (lookahead.type == TOKEN_ID) { /* P08 */
+        abrirNo("<lista_declaracoes>", 8);
+        declaracao();
+        listaDeclaracoes();
+    } else if (lookahead.type == TOKEN_KW_INICIO) { /* P09: epsilon */
+        abrirNo("<lista_declaracoes>", 9);
+        registrarEpsilon();
+    } else {
+        erroSintatico("ID ou INICIO");
+    }
+    fecharNo();
+}
+
+static void declaracao(void)
+{
+    if (lookahead.type != TOKEN_ID) {
+        erroSintatico("ID");
+    }
+    abrirNo("<declaracao>", 10);
+    listaIds();
+    consome(TOKEN_DOIS_PONTOS);
+    tipoDecl();
+    fecharNo();
+}
+
+static void listaIds(void)
+{
+    if (lookahead.type != TOKEN_ID) {
+        erroSintatico("ID");
+    }
+    abrirNo("<lista_ids>", 11);
+    consome(TOKEN_ID);
+    listaIdsCauda();
+    fecharNo();
+}
+
+static void listaIdsCauda(void)
+{
+    if (lookahead.type == TOKEN_VIRGULA) { /* P12 */
+        abrirNo("<lista_ids_cauda>", 12);
+        consome(TOKEN_VIRGULA);
+        consome(TOKEN_ID);
+        listaIdsCauda();
+    } else if (lookahead.type == TOKEN_DOIS_PONTOS) { /* P13: epsilon */
+        abrirNo("<lista_ids_cauda>", 13);
+        registrarEpsilon();
+    } else {
+        erroSintatico("VIRGULA ou DOIS_PONTOS");
+    }
+    fecharNo();
+}
+
+static void tipoDecl(void)
+{
+    if (lookahead.type == TOKEN_KW_INTEIRO || lookahead.type == TOKEN_KW_REAL ||
+        lookahead.type == TOKEN_KW_CARACTERE || lookahead.type == TOKEN_KW_LOGICO) { /* P14 */
+        abrirNo("<tipo_decl>", 14);
+        tipoSimples();
+    } else if (lookahead.type == TOKEN_KW_VETOR) { /* P15 */
+        abrirNo("<tipo_decl>", 15);
+        tipoVetor();
+    } else {
+        erroSintatico("INTEIRO, REAL, CARACTERE, LOGICO ou VETOR");
+    }
+    fecharNo();
+}
+
+static void tipoVetor(void)
+{
+    if (lookahead.type != TOKEN_KW_VETOR) {
+        erroSintatico("VETOR");
+    }
+    abrirNo("<tipo_vetor>", 16);
+    consome(TOKEN_KW_VETOR);
+    consome(TOKEN_ABRE_COL);
+    consome(TOKEN_NUM_INT);
+    consome(TOKEN_INTERVALO);
+    consome(TOKEN_NUM_INT);
+    consome(TOKEN_FECHA_COL);
+    consome(TOKEN_KW_DE);
+    tipoSimples();
+    fecharNo();
+}
+
+static void tipoSimples(void)
+{
+    TokenName tipo = lookahead.type;
+    int producao;
+    if (tipo == TOKEN_KW_INTEIRO) {
+        producao = 17;
+    } else if (tipo == TOKEN_KW_REAL) {
+        producao = 18;
+    } else if (tipo == TOKEN_KW_CARACTERE) {
+        producao = 19;
+    } else if (tipo == TOKEN_KW_LOGICO) {
+        producao = 20;
+    } else {
+        erroSintatico("INTEIRO, REAL, CARACTERE ou LOGICO");
+        return;
+    }
+    abrirNo("<tipo_simples>", producao);
+    consome(tipo);
+    fecharNo();
+}
+
+static void listaRotinas(void)
+{
+    if (lookahead.type == TOKEN_KW_PROCEDIMENTO || lookahead.type == TOKEN_KW_FUNCAO) { /* P21 */
+        abrirNo("<lista_rotinas>", 21);
+        rotina();
+        listaRotinas();
+    } else if (lookahead.type == TOKEN_KW_VAR || lookahead.type == TOKEN_KW_INICIO) { /* P22 */
+        abrirNo("<lista_rotinas>", 22);
+        registrarEpsilon();
+    } else {
+        erroSintatico("PROCEDIMENTO, FUNCAO, VAR ou INICIO");
+    }
+    fecharNo();
+}
+
+static void rotina(void)
+{
+    if (lookahead.type == TOKEN_KW_PROCEDIMENTO) { /* P23 */
+        abrirNo("<rotina>", 23);
+        procedimento();
+    } else if (lookahead.type == TOKEN_KW_FUNCAO) { /* P24 */
+        abrirNo("<rotina>", 24);
+        funcao();
+    } else {
+        erroSintatico("PROCEDIMENTO ou FUNCAO");
+    }
+    fecharNo();
+}
+
+static void procedimento(void)
+{
+    if (lookahead.type != TOKEN_KW_PROCEDIMENTO) {
+        erroSintatico("PROCEDIMENTO");
+    }
+    abrirNo("<procedimento>", 25);
+    consome(TOKEN_KW_PROCEDIMENTO);
+    consome(TOKEN_ID);
+    parametrosProcedimento();
+    bloco();
+    consome(TOKEN_KW_FIMPROCEDIMENTO);
+    fecharNo();
+}
+
+static void parametrosProcedimento(void)
+{
+    if (lookahead.type == TOKEN_ABRE_PAR) { /* P26 */
+        abrirNo("<parametros_procedimento>", 26);
+        consome(TOKEN_ABRE_PAR);
+        listaParametros();
+        consome(TOKEN_FECHA_PAR);
+    } else if (lookahead.type == TOKEN_KW_INICIO) { /* P27: epsilon */
+        abrirNo("<parametros_procedimento>", 27);
+        registrarEpsilon();
+    } else {
+        erroSintatico("ABRE_PAR ou INICIO");
+    }
+    fecharNo();
+}
+
+static void funcao(void)
+{
+    if (lookahead.type != TOKEN_KW_FUNCAO) {
+        erroSintatico("FUNCAO");
+    }
+    abrirNo("<funcao>", 28);
+    consome(TOKEN_KW_FUNCAO);
+    consome(TOKEN_ID);
+    consome(TOKEN_ABRE_PAR);
+    listaParametros();
+    consome(TOKEN_FECHA_PAR);
+    consome(TOKEN_DOIS_PONTOS);
+    tipoSimples();
+    bloco();
+    consome(TOKEN_KW_FIMFUNCAO);
+    fecharNo();
+}
+
+static void listaParametros(void)
+{
+    if (lookahead.type != TOKEN_ID) {
+        erroSintatico("ID");
+    }
+    abrirNo("<lista_parametros>", 29);
+    parametro();
+    listaParametrosCauda();
+    fecharNo();
+}
+
+static void listaParametrosCauda(void)
+{
+    if (lookahead.type == TOKEN_VIRGULA) { /* P30 */
+        abrirNo("<lista_parametros_cauda>", 30);
+        consome(TOKEN_VIRGULA);
+        parametro();
+        listaParametrosCauda();
+    } else if (lookahead.type == TOKEN_FECHA_PAR) { /* P31: epsilon */
+        abrirNo("<lista_parametros_cauda>", 31);
+        registrarEpsilon();
+    } else {
+        erroSintatico("VIRGULA ou FECHA_PAR");
+    }
+    fecharNo();
+}
+
+static void parametro(void)
+{
+    if (lookahead.type != TOKEN_ID) {
+        erroSintatico("ID");
+    }
+    abrirNo("<parametro>", 32);
+    consome(TOKEN_ID);
+    consome(TOKEN_DOIS_PONTOS);
+    tipoSimples();
+    fecharNo();
+}
+
+/* ======================================================================== */
+/* 18. Comandos e argumentos (P33-P67)                                       */
+/* ======================================================================== */
+
+static void listaComandos(void)
+{
+    if (!ehInicioComando(lookahead.type)) {
+        erroSintatico("inicio de comando");
+    }
+    abrirNo("<lista_comandos>", 33);
+    comando();
+    listaComandosCauda();
+    fecharNo();
+}
+
+static void listaComandosCauda(void)
+{
+    if (ehInicioComando(lookahead.type)) { /* P34 */
+        abrirNo("<lista_comandos_cauda>", 34);
+        comando();
+        listaComandosCauda();
+    } else if (ehFimListaComandos(lookahead.type)) { /* P35: epsilon */
+        abrirNo("<lista_comandos_cauda>", 35);
+        registrarEpsilon();
+    } else {
+        erroSintatico("inicio de comando ou fechamento de bloco");
+    }
+    fecharNo();
+}
+
+static void comando(void)
+{
+    int producao;
+    if (lookahead.type == TOKEN_ID) {
+        producao = 36;
+    } else if (lookahead.type == TOKEN_KW_LEIA) {
+        producao = 37;
+    } else if (lookahead.type == TOKEN_KW_ESCREVA) {
+        producao = 38;
+    } else if (lookahead.type == TOKEN_KW_ESCREVAL) {
+        producao = 39;
+    } else if (lookahead.type == TOKEN_KW_SE) {
+        producao = 40;
+    } else if (lookahead.type == TOKEN_KW_PARA) {
+        producao = 41;
+    } else if (lookahead.type == TOKEN_KW_ENQUANTO) {
+        producao = 42;
+    } else if (lookahead.type == TOKEN_KW_RETORNE) {
+        producao = 43;
+    } else {
+        erroSintatico("inicio de comando");
+        return;
+    }
+
+    abrirNo("<comando>", producao);
+    switch (producao) {
+    case 36: cmdId(); break;
+    case 37: cmdLeia(); break;
+    case 38: cmdEscreva(); break;
+    case 39: cmdEscreval(); break;
+    case 40: cmdSe(); break;
+    case 41: cmdPara(); break;
+    case 42: cmdEnquanto(); break;
+    case 43: cmdRetorne(); break;
+    }
+    fecharNo();
+}
+
+static void cmdId(void)
+{
+    if (lookahead.type != TOKEN_ID) {
+        erroSintatico("ID");
+    }
+    abrirNo("<cmd_id>", 44);
+    consome(TOKEN_ID);
+    caudaComandoId();
+    fecharNo();
+}
+
+static void caudaComandoId(void)
+{
+    if (lookahead.type == TOKEN_ATRIBUICAO) { /* P45 */
+        abrirNo("<cauda_comando_id>", 45);
+        consome(TOKEN_ATRIBUICAO);
+        expressao();
+    } else if (lookahead.type == TOKEN_ABRE_COL) { /* P46 */
+        abrirNo("<cauda_comando_id>", 46);
+        consome(TOKEN_ABRE_COL);
+        expressao();
+        consome(TOKEN_FECHA_COL);
+        consome(TOKEN_ATRIBUICAO);
+        expressao();
+    } else if (lookahead.type == TOKEN_ABRE_PAR) { /* P47 */
+        abrirNo("<cauda_comando_id>", 47);
+        consome(TOKEN_ABRE_PAR);
+        listaArgumentos();
+        consome(TOKEN_FECHA_PAR);
+    } else if (ehInicioComando(lookahead.type) || ehFimListaComandos(lookahead.type)) { /* P48 */
+        abrirNo("<cauda_comando_id>", 48);
+        registrarEpsilon();
+    } else {
+        erroSintatico("ATRIBUICAO, ABRE_COL, ABRE_PAR ou fim de comando");
+    }
+    fecharNo();
+}
+
+static void cmdLeia(void)
+{
+    if (lookahead.type != TOKEN_KW_LEIA) {
+        erroSintatico("LEIA");
+    }
+    abrirNo("<cmd_leia>", 49);
+    consome(TOKEN_KW_LEIA);
+    consome(TOKEN_ABRE_PAR);
+    referencia();
+    consome(TOKEN_FECHA_PAR);
+    fecharNo();
+}
+
+static void referencia(void)
+{
+    if (lookahead.type != TOKEN_ID) {
+        erroSintatico("ID");
+    }
+    abrirNo("<referencia>", 50);
+    consome(TOKEN_ID);
+    indiceOpcional();
+    fecharNo();
+}
+
+static void indiceOpcional(void)
+{
+    if (lookahead.type == TOKEN_ABRE_COL) { /* P51 */
+        abrirNo("<indice_opcional>", 51);
+        consome(TOKEN_ABRE_COL);
+        expressao();
+        consome(TOKEN_FECHA_COL);
+    } else if (lookahead.type == TOKEN_FECHA_PAR) { /* P52: epsilon */
+        abrirNo("<indice_opcional>", 52);
+        registrarEpsilon();
+    } else {
+        erroSintatico("ABRE_COL ou FECHA_PAR");
+    }
+    fecharNo();
+}
+
+static void cmdEscreva(void)
+{
+    if (lookahead.type != TOKEN_KW_ESCREVA) {
+        erroSintatico("ESCREVA");
+    }
+    abrirNo("<cmd_escreva>", 53);
+    consome(TOKEN_KW_ESCREVA);
+    consome(TOKEN_ABRE_PAR);
+    listaArgumentos();
+    consome(TOKEN_FECHA_PAR);
+    fecharNo();
+}
+
+static void cmdEscreval(void)
+{
+    if (lookahead.type != TOKEN_KW_ESCREVAL) {
+        erroSintatico("ESCREVAL");
+    }
+    abrirNo("<cmd_escreval>", 54);
+    consome(TOKEN_KW_ESCREVAL);
+    consome(TOKEN_ABRE_PAR);
+    listaArgumentos();
+    consome(TOKEN_FECHA_PAR);
+    fecharNo();
+}
+
+static void cmdSe(void)
+{
+    if (lookahead.type != TOKEN_KW_SE) {
+        erroSintatico("SE");
+    }
+    abrirNo("<cmd_se>", 55);
+    consome(TOKEN_KW_SE);
+    consome(TOKEN_ABRE_PAR);
+    expressao();
+    consome(TOKEN_FECHA_PAR);
+    consome(TOKEN_KW_ENTAO);
+    listaComandos();
+    senaoOpcional();
+    consome(TOKEN_KW_FIMSE);
+    fecharNo();
+}
+
+static void senaoOpcional(void)
+{
+    if (lookahead.type == TOKEN_KW_SENAO) { /* P56 */
+        abrirNo("<senao_opcional>", 56);
+        consome(TOKEN_KW_SENAO);
+        listaComandos();
+    } else if (lookahead.type == TOKEN_KW_FIMSE) { /* P57: epsilon */
+        abrirNo("<senao_opcional>", 57);
+        registrarEpsilon();
+    } else {
+        erroSintatico("SENAO ou FIMSE");
+    }
+    fecharNo();
+}
+
+static void cmdPara(void)
+{
+    if (lookahead.type != TOKEN_KW_PARA) {
+        erroSintatico("PARA");
+    }
+    abrirNo("<cmd_para>", 58);
+    consome(TOKEN_KW_PARA);
+    consome(TOKEN_ID);
+    consome(TOKEN_KW_DE);
+    expressao();
+    consome(TOKEN_KW_ATE);
+    expressao();
+    passoOpcional();
+    consome(TOKEN_KW_FACA);
+    listaComandos();
+    consome(TOKEN_KW_FIMPARA);
+    fecharNo();
+}
+
+static void passoOpcional(void)
+{
+    if (lookahead.type == TOKEN_KW_PASSO) { /* P59 */
+        abrirNo("<passo_opcional>", 59);
+        consome(TOKEN_KW_PASSO);
+        numeroPasso();
+    } else if (lookahead.type == TOKEN_KW_FACA) { /* P60: epsilon */
+        abrirNo("<passo_opcional>", 60);
+        registrarEpsilon();
+    } else {
+        erroSintatico("PASSO ou FACA");
+    }
+    fecharNo();
+}
+
+static void numeroPasso(void)
+{
+    if (lookahead.type == TOKEN_NUM_INT) { /* P61 */
+        abrirNo("<numero_passo>", 61);
+        consome(TOKEN_NUM_INT);
+    } else if (lookahead.type == TOKEN_MENOS) { /* P62 */
+        abrirNo("<numero_passo>", 62);
+        consome(TOKEN_MENOS);
+        consome(TOKEN_NUM_INT);
+    } else {
+        erroSintatico("NUM_INT ou MENOS");
+    }
+    fecharNo();
+}
+
+static void cmdEnquanto(void)
+{
+    if (lookahead.type != TOKEN_KW_ENQUANTO) {
+        erroSintatico("ENQUANTO");
+    }
+    abrirNo("<cmd_enquanto>", 63);
+    consome(TOKEN_KW_ENQUANTO);
+    consome(TOKEN_ABRE_PAR);
+    expressao();
+    consome(TOKEN_FECHA_PAR);
+    consome(TOKEN_KW_FACA);
+    listaComandos();
+    consome(TOKEN_KW_FIMENQUANTO);
+    fecharNo();
+}
+
+static void cmdRetorne(void)
+{
+    if (lookahead.type != TOKEN_KW_RETORNE) {
+        erroSintatico("RETORNE");
+    }
+    abrirNo("<cmd_retorne>", 64);
+    consome(TOKEN_KW_RETORNE);
+    expressao();
+    fecharNo();
+}
+
+static void listaArgumentos(void)
+{
+    if (!ehInicioExpressao(lookahead.type)) {
+        erroSintatico("inicio de expressao");
+    }
+    abrirNo("<lista_argumentos>", 65);
+    expressao();
+    listaArgumentosCauda();
+    fecharNo();
+}
+
+static void listaArgumentosCauda(void)
+{
+    if (lookahead.type == TOKEN_VIRGULA) { /* P66 */
+        abrirNo("<lista_argumentos_cauda>", 66);
+        consome(TOKEN_VIRGULA);
+        expressao();
+        listaArgumentosCauda();
+    } else if (lookahead.type == TOKEN_FECHA_PAR) { /* P67: epsilon */
+        abrirNo("<lista_argumentos_cauda>", 67);
+        registrarEpsilon();
+    } else {
+        erroSintatico("VIRGULA ou FECHA_PAR");
+    }
+    fecharNo();
+}
+
+/* ======================================================================== */
+/* 19. Expressoes (P68-P91)                                                  */
+/* ======================================================================== */
+
+static void expressao(void)
+{
+    if (!ehInicioExpressao(lookahead.type)) {
+        erroSintatico("inicio de expressao");
+    }
+    abrirNo("<expressao>", 68);
+    exprLogica();
+    fecharNo();
+}
+
+static void exprLogica(void)
+{
+    if (!ehInicioExpressao(lookahead.type)) {
+        erroSintatico("inicio de expressao");
+    }
+    abrirNo("<expr_logica>", 69);
+    exprRelacional();
+    exprLogicaCauda();
+    fecharNo();
+}
+
+static void exprLogicaCauda(void)
+{
+    if (lookahead.type == TOKEN_E) { /* P70 */
+        abrirNo("<expr_logica_cauda>", 70);
+        consome(TOKEN_E);
+        exprRelacional();
+        exprLogicaCauda();
+    } else if (lookahead.type == TOKEN_OU) { /* P71 */
+        abrirNo("<expr_logica_cauda>", 71);
+        consome(TOKEN_OU);
+        exprRelacional();
+        exprLogicaCauda();
+    } else if (estaEmX(lookahead.type)) { /* P72: epsilon */
+        abrirNo("<expr_logica_cauda>", 72);
+        registrarEpsilon();
+    } else {
+        erroSintatico("E, OU ou fim de expressao");
+    }
+    fecharNo();
+}
+
+static void exprRelacional(void)
+{
+    if (!ehInicioExpressao(lookahead.type)) {
+        erroSintatico("inicio de expressao");
+    }
+    abrirNo("<expr_relacional>", 73);
+    exprAditiva();
+    exprRelCauda();
+    fecharNo();
+}
+
+static void exprRelCauda(void)
+{
+    if (lookahead.type == TOKEN_OP_REL) { /* P74 */
+        abrirNo("<expr_rel_cauda>", 74);
+        consome(TOKEN_OP_REL);
+        exprAditiva();
+    } else if (estaNoSelectP75(lookahead.type)) { /* P75: epsilon */
+        abrirNo("<expr_rel_cauda>", 75);
+        registrarEpsilon();
+    } else {
+        erroSintatico("OP_REL ou fim do nivel relacional");
+    }
+    fecharNo();
+}
+
+static void exprAditiva(void)
+{
+    if (!ehInicioExpressao(lookahead.type)) {
+        erroSintatico("inicio de expressao");
+    }
+    abrirNo("<expr_aditiva>", 76);
+    exprMult();
+    exprAditivaCauda();
+    fecharNo();
+}
+
+static void exprAditivaCauda(void)
+{
+    if (lookahead.type == TOKEN_MAIS) { /* P77 */
+        abrirNo("<expr_aditiva_cauda>", 77);
+        consome(TOKEN_MAIS);
+        exprMult();
+        exprAditivaCauda();
+    } else if (estaNoSelectP78(lookahead.type)) { /* P78: epsilon */
+        abrirNo("<expr_aditiva_cauda>", 78);
+        registrarEpsilon();
+    } else {
+        erroSintatico("MAIS ou fim do nivel aditivo");
+    }
+    fecharNo();
+}
+
+static void exprMult(void)
+{
+    if (!ehInicioExpressao(lookahead.type)) {
+        erroSintatico("inicio de expressao");
+    }
+    abrirNo("<expr_mult>", 79);
+    primario();
+    exprMultCauda();
+    fecharNo();
+}
+
+static void exprMultCauda(void)
+{
+    if (lookahead.type == TOKEN_OP_MULT) { /* P80 */
+        abrirNo("<expr_mult_cauda>", 80);
+        consome(TOKEN_OP_MULT);
+        primario();
+        exprMultCauda();
+    } else if (estaNoSelectP81(lookahead.type)) { /* P81: epsilon */
+        abrirNo("<expr_mult_cauda>", 81);
+        registrarEpsilon();
+    } else {
+        erroSintatico("OP_MULT ou fim do nivel multiplicativo");
+    }
+    fecharNo();
+}
+
+static void primario(void)
+{
+    int producao;
+    TokenName terminal = lookahead.type;
+    if (terminal == TOKEN_ID) {
+        producao = 82;
+    } else if (terminal == TOKEN_NUM_INT) {
+        producao = 83;
+    } else if (terminal == TOKEN_NUM_REAL) {
+        producao = 84;
+    } else if (terminal == TOKEN_STRING) {
+        producao = 85;
+    } else if (terminal == TOKEN_KW_VERDADEIRO) {
+        producao = 86;
+    } else if (terminal == TOKEN_KW_FALSO) {
+        producao = 87;
+    } else if (terminal == TOKEN_ABRE_PAR) {
+        producao = 88;
+    } else {
+        erroSintatico("ID, NUM_INT, NUM_REAL, STRING, VERDADEIRO, FALSO ou ABRE_PAR");
+        return;
+    }
+
+    abrirNo("<primario>", producao);
+    if (producao == 82) {
+        consome(TOKEN_ID);
+        caudaPrimario();
+    } else if (producao == 88) {
+        consome(TOKEN_ABRE_PAR);
+        expressao();
+        consome(TOKEN_FECHA_PAR);
+    } else {
+        consome(terminal);
+    }
+    fecharNo();
+}
+
+static void caudaPrimario(void)
+{
+    if (lookahead.type == TOKEN_ABRE_COL) { /* P89 */
+        abrirNo("<cauda_primario>", 89);
+        consome(TOKEN_ABRE_COL);
+        expressao();
+        consome(TOKEN_FECHA_COL);
+    } else if (lookahead.type == TOKEN_ABRE_PAR) { /* P90 */
+        abrirNo("<cauda_primario>", 90);
+        consome(TOKEN_ABRE_PAR);
+        listaArgumentos();
+        consome(TOKEN_FECHA_PAR);
+    } else if (estaNoSelectP91(lookahead.type)) { /* P91: epsilon */
+        abrirNo("<cauda_primario>", 91);
+        registrarEpsilon();
+    } else {
+        erroSintatico("ABRE_COL, ABRE_PAR ou fim de primario");
+    }
+    fecharNo();
+}
+
+/* ======================================================================== */
+/* 20. Driver integrado e main                                               */
+/* ======================================================================== */
+
+static bool executarAnaliseSintatica(void)
+{
+    arvore_output = fopen(ARQUIVO_SAIDA_ARVORE, "wb");
+    if (arvore_output == NULL) {
+        fprintf(stderr, "erro: nao foi possivel criar o arquivo '%s'\n", ARQUIVO_SAIDA_ARVORE);
+        return false;
+    }
+    profundidade_arvore = 0;
+    lookahead_valido = false;
+
+    nextToken();
+    programa();
+    exigirFimArquivo();
+    fecharAnalisadorSintatico();
+    return true;
 }
 
 int main(int argc, char *argv[])
@@ -875,7 +1898,10 @@ int main(int argc, char *argv[])
     if (!iniciarAnalisadorLexico(argv[1])) {
         return EXIT_OPERATIONAL_ERROR;
     }
-    executarAnaliseLexica();
+    if (!executarAnaliseSintatica()) {
+        fecharAnalisadorLexico();
+        return EXIT_OPERATIONAL_ERROR;
+    }
     fecharAnalisadorLexico();
     return EXIT_SUCCESS;
 }

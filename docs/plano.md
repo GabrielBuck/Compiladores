@@ -12,8 +12,8 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 | D | FIRST / FOLLOW / nullable + verificação LL(1) — **CONCLUÍDA** | `docs/analise-ll1.md` (+ resumo em `gramatica.md` §19) | 1 → 3 |
 | E | Casos de teste derivados da gramática — **CONCLUÍDA** | `testes/` + `docs/testes.md` | 2 e 3 |
 | F | Analisador léxico — **CONCLUÍDA** | `obterToken()`, TS, saída tela/arquivo (`compilador.c`, `docs/arquitetura.md`) | 2 (40%) |
-| G | Analisador sintático — **PRÓXIMA** | funções por não-terminal, `nextToken()`, derivação | 3 (40%) |
-| H | Integração | `compilador.c` único, `argc/argv`, entrega | 2 + 3 |
+| G | Analisador sintático — **CONCLUÍDA** | funções por não-terminal, `nextToken()`, derivação | 3 (40%) |
+| H | Auditoria completa de integração — **PRÓXIMA** | `compilador.c` único, `argc/argv`, entrega | 2 + 3 |
 | I | Tratamento adversarial de erros | testes de erro léxico/sintático, linha correta | 2 + 3 |
 | J | Documentação final e apresentação | `documentacao.pdf`, `readme.txt` final, roteiro oral | todas |
 
@@ -112,19 +112,24 @@ Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Conte
   provisoriamente, DEC-55).
 - **Fora do escopo cumprido:** nenhum parser, nenhum `nextToken()`/`consome()`, nenhuma função de não-terminal.
 
-## Fase G — Sintático  — PRÓXIMA
+## Fase G — Sintático  — CONCLUÍDA
 
-- Uma função por não-terminal, `lookahead`, `consome()`, `nextToken()` (que chama `obterToken()`).
-- Substitui o driver temporário `executarAnaliseLexica()`; consome `TOKEN_EOF` depois de `<programa>` (DEC-46).
-- Erro sintático com token e linha; decisão final sobre derivação (DEC-11 / AMB-07). Os pontos de falha esperados
-  estão em `docs/testes.md` §8 e o mapa de decisão em `docs/analise-ll1.md` §13.
-- **Critério de saída:** compila sem warnings; os 44 testes sintáticos executados (`ACEITA`/`ERRO_SINTATICO`).
+- **Saída:** parser descendente recursivo preditivo LL(1) integrado em `compilador.c`; um lookahead,
+  `nextToken()` → `obterToken()`, `consome()`, 50 funções de não-terminal e P01–P91; árvore textual em
+  `arvore.txt`; DEC-57…DEC-63; AMB-07 resolvida.
+- **SELECT/ε:** as 17 produções vazias só são escolhidas pelo próprio SELECT; nenhum `default -> ε`.
+- **Erro/EOF:** primeiro token e linha, cleanup centralizado, árvore parcial marcada e EOF obrigatório depois
+  de `FIMALGORITMO`; `tokens.txt` permanece exclusivamente lexical.
+- **Critérios atendidos (execução real):** comando oficial com 0 erros/0 warnings; SY-V **19/19**; SY-E
+  **20/20** no primeiro token e linha esperados; SY-L **5/5**; regressão LX-V **9/9** e LX-E **9/9** com
+  harness externo; cinco árvores válidas e uma inválida inspecionadas; P01–P91, testes e documentos
+  normativos inalterados. Detalhes em `docs/testes.md` §17.
 
-## Fase H — Integração
+## Fase H — Auditoria completa de integração  — PRÓXIMA
 
-- Junção em um único `compilador.c` (nomes dos integrantes no topo), `argc/argv`, tratamento de falha
-  de abertura, códigos de retorno.
-- Verificar o comando exato: `gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador`.
+- Auditar de ponta a ponta o `compilador.c` único, `argc/argv`, falhas operacionais, saídas e códigos de retorno.
+- Repetir o comando exato: `gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador` e toda a suíte.
+- Não iniciar sem autorização explícita do grupo.
 
 ## Fase I — Erros adversariais
 

@@ -1,8 +1,8 @@
-# Testes do MiniVisualg — Fase E
+# Testes do MiniVisualg — Fases E, F e G
 
-> **Status: suíte pronta, compilador inexistente.** 62 testes (9 LX-V, 9 LX-E, 19 SY-V, 20 SY-E, 5 SY-L)
-> escritos **antes** da implementação. Cobertura: P01–P91 (todas), os 49 terminais, `LEX-01`…`LEX-18` e as
-> decisões críticas. Nada foi executado em compilador nenhum: ele ainda não existe.
+> **Status:** os 62 testes (9 LX-V, 9 LX-E, 19 SY-V, 20 SY-E, 5 SY-L) foram escritos **antes** da
+> implementação. A Fase F executou a regressão lexical e a Fase G executou o parser integrado. Cobertura:
+> P01–P91 (todas), os 49 terminais, `LEX-01`…`LEX-18` e as decisões críticas.
 >
 > Arquivos em [`../testes/`](../testes/); índice em [`../testes/manifest.tsv`](../testes/manifest.tsv).
 
@@ -506,8 +506,9 @@ Os testes **não foram alterados**: os goldens e os `.erro.txt` da Fase E foram 
 | **LX-E01…LX-E09** | **9/9** | uma única linha `ERRO LÉXICO`, a última; tipo, **linha** e **sequência** = `.erro.txt`; tela = `tokens.txt` (erro incluído); tokens anteriores = prefixo da referência; exit 0 (provisório) |
 | **Sintáticos (19 SY-V + 20 SY-E + 5 SY-L)** | **44/44** lexicamente válidos | nenhum `ERRO LÉXICO`; tokenização idêntica à do tokenizador de referência da Fase E; exit 0 |
 
-Os 44 arquivos **não** foram classificados como `ACEITA`/`ERRO_SINTATICO`: o parser ainda não existe. O único
-resultado registrado para eles é *"tokenização concluída sem erro léxico"*.
+Naquela execução histórica da Fase F, os 44 arquivos **não** foram classificados como
+`ACEITA`/`ERRO_SINTATICO`, pois o parser ainda não existia. O único resultado registrado naquele ponto foi
+*"tokenização concluída sem erro léxico"*.
 
 Pontos críticos:
 
@@ -545,3 +546,97 @@ Todas passaram; os resultados esperados vêm do contrato (§12 da especificaçã
 - O harness que rodou tudo isso fica fora do repositório (scratchpad) e não é versionado.
 - Não houve execução sob ferramenta de memória (AddressSanitizer indisponível neste MinGW); ver
   `arquitetura.md` §15.
+
+## 17. Execução na Fase G
+
+Execução **real** após implementar o parser. Nenhum arquivo em `testes/`, nenhuma produção P01–P91 e nenhum
+documento normativo da linguagem foi alterado.
+
+| Item | Valor |
+|---|---|
+| Compilador | `gcc.exe (Rev8, Built by MSYS2 project) 15.2.0` |
+| Comando | `gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador` |
+| Resultado | saída vazia, exit 0, 0 erros, 0 warnings |
+| Parser | descendente recursivo preditivo LL(1), 1 lookahead, 50 funções, P01–P91 |
+| Artefatos | `tokens.txt` (léxico) e `arvore.txt` (derivação textual) |
+
+### 17.1 Suíte sintática
+
+| Grupo | Resultado | Verificado |
+|---|---|---|
+| **SY-V01…SY-V19** | **19/19** | exit 0; sem erro léxico/sintático; `arvore.txt` não vazio com raiz `<programa> [P01]` |
+| **SY-E01…SY-E20** | **20/20** | `ERRO SINTÁTICO`; primeiro token e linha iguais à §8; árvore parcial com `<ERRO SINTATICO>`; exit 0 provisório |
+| **SY-L01…SY-L05** | **5/5** | aceitos sintaticamente, sem análise semântica |
+
+Resultados individuais dos erros:
+
+| ID | Linha esperada | Token esperado | Linha observada | Token observado | Resultado |
+|---|---:|---|---:|---|---|
+| SY-E01 | 2 | `INICIO` | 2 | `INICIO` | PASS |
+| SY-E02 | 4 | `FIMALGORITMO` | 4 | `FIMALGORITMO` | PASS |
+| SY-E03 | 3 | `INTEIRO` | 3 | `INTEIRO` | PASS |
+| SY-E04 | 4 | `ID` | 4 | `ID` | PASS |
+| SY-E05 | 2 | `FECHA_PAR` | 2 | `FECHA_PAR` | PASS |
+| SY-E06 | 2 | `FECHA_PAR` | 2 | `FECHA_PAR` | PASS |
+| SY-E07 | 4 | `FECHA_PAR` | 4 | `FECHA_PAR` | PASS |
+| SY-E08 | 5 | `VIRGULA` | 5 | `VIRGULA` | PASS |
+| SY-E09 | 5 | `ID` | 5 | `ID` | PASS |
+| SY-E10 | 6 | `ID` | 6 | `ID` | PASS |
+| SY-E11 | 6 | `ESCREVAL` | 6 | `ESCREVAL` | PASS |
+| SY-E12 | 8 | `FIMALGORITMO` | 8 | `FIMALGORITMO` | PASS |
+| SY-E13 | 6 | `OP_REL` | 6 | `OP_REL` | PASS |
+| SY-E14 | 5 | `MENOS` | 5 | `MENOS` | PASS |
+| SY-E15 | 5 | `ID` | 5 | `ID` | PASS |
+| SY-E16 | 5 | `ID` | 5 | `ID` | PASS |
+| SY-E17 | 9 | `FECHA_PAR` | 9 | `FECHA_PAR` | PASS |
+| SY-E18 | 7 | `FECHA_PAR` | 7 | `FECHA_PAR` | PASS |
+| SY-E19 | 4 | `EOF` | 4 | `EOF` | PASS |
+| SY-E20 | 5 | `OP_MULT` | 5 | `OP_MULT` | PASS |
+
+### 17.2 Regressão léxica pós-integração
+
+Um harness descartável, criado no diretório temporário e removido ao fim, incluiu `compilador.c`, renomeou
+o `main` integrado e chamou somente `obterToken()` até EOF. Resultado: **LX-V 9/9** (stdout e `tokens.txt`
+iguais aos goldens) e **LX-E 9/9** (linha e sequência corretas; erro também em `tokens.txt`).
+
+Antes do parser, após as correções `%zu` e documentação C11, o driver ainda lexical também produziu
+**LX-V 9/9**, **LX-E 9/9** e **44/44** arquivos sintáticos sem erro léxico.
+
+### 17.3 Casos temporários e árvores
+
+| Caso | Resultado observado |
+|---|---|
+| arquivo vazio | `ERRO SINTÁTICO - linha 1 - token: EOF - esperado: ALGORITMO` |
+| somente comentário, com LF final | EOF na linha 2 e erro esperado em `ALGORITMO`; sem LF final, DEC-54 coloca o EOF na linha 1 |
+| programa válido + `escreval("lixo")` após `fimalgoritmo` | erro na linha 6, token `ESCREVAL`, esperado `EOF` |
+
+Inspeção estrutural manual/automatizada de `SY-V01`, `SY-V08`, `SY-V10`, `SY-V15` e `SY-V16`: todas têm
+raiz, Pxx, folhas terminais, `ε`, hierarquia e indentação. Contagens de produções nessas árvores:
+21, 106, 54, 110 e 127, respectivamente. `SY-E14` foi inspecionada como caso inválido: a árvore fica
+parcial e contém `<ERRO SINTATICO>`.
+
+Trecho real de `SY-V01`:
+
+```text
+<programa> [P01]
+  ALGORITMO
+  STRING "PrimeiroPasso"
+  <corpo_programa> [P02]
+    <secao_var> [P04]
+      VAR
+      <lista_declaracoes> [P09]
+        ε
+    <bloco> [P07]
+      INICIO
+```
+
+### 17.4 Auditorias mecânicas
+
+- 91 números de produção distintos no código, exatamente 1…91, sem lacunas;
+- 50 funções de não-terminal, exatamente uma definição de cada;
+- no parser, apenas `nextToken()` chama `obterToken()`;
+- as 17 alternativas ε têm testes explícitos do próprio SELECT;
+- `docs/gramatica.md`, `docs/analise-ll1.md`, `docs/especificacao-lexica.md`,
+  `docs/especificacao-minivisualg.md` e todo `testes/` sem diff;
+- revisão manual de ownership: lookahead liberado uma vez no avanço, no erro ou no fim; árvore não retém
+  lexemas; cleanup fecha árvore e lexer em erro e no caminho normal.

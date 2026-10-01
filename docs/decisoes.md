@@ -625,6 +625,9 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   saída; (3) **limites**: estouro de `NUM_INT` além do inteiro do C, comprimento máximo de ID/STRING.
 - **Fixado:** o **conteúdo** das mensagens e da listagem (DEC-22, DEC-26); `NUM_INT` é `[0-9]+` sem limite
   lexical declarado.
+- **Acrescentado na Fase E:** (4) a **linha atribuída ao `TOKEN_EOF`** quando o arquivo termina com `\n`: a
+  última linha com conteúdo ou a seguinte? Afeta a linha reportada num erro sintático "fim de arquivo
+  inesperado". O teste SY-E19 evita a dúvida terminando sem `\n` final; a decisão fica para a Fase F/G.
 - **Ação:** decidir na Fase F (nenhum desses pontos altera o vocabulário nem a gramática).
 
 ---

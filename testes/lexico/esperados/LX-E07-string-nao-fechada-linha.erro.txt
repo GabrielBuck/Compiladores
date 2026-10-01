@@ -1,0 +1,3 @@
+TIPO=ERRO LÉXICO
+LINHA=4
+SEQUENCIA="Olá, mundo)

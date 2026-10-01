@@ -1,0 +1,10 @@
+algoritmo "Enquanto"
+var
+contador: inteiro
+inicio
+contador <- 1
+enquanto (contador <= 5) faca
+escreval(contador)
+contador <- contador + 1
+fimenquanto
+fimalgoritmo

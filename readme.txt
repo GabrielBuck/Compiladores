@@ -11,15 +11,15 @@ Integrantes:
 ------------------------------------------------------------
 [ATUALIZAR A CADA FASE]
 
-Situacao atual: FASES A, A.1, B (especificacao lexical), C (gramatica) e
-D (FIRST/FOLLOW e validacao LL(1)) concluidas - SOMENTE DOCUMENTACAO.
+Situacao atual: FASES A, A.1, B, C, D e E concluidas - DOCUMENTACAO E
+CASOS DE TESTE. O compilador ainda nao existe; nenhum teste foi executado
+contra ele.
 
-  Etapa 1 - Expressoes regulares ............... CONCLUIDAS (docs/especificacao-lexica.md)
-  Etapa 1 - GLC ................................ CONCLUIDA (docs/gramatica.md)
-  Etapa 1 - FIRST / FOLLOW ..................... CONCLUIDOS (docs/analise-ll1.md)
-  Etapa 1 - Validacao LL(1) .................... CONCLUIDA (sem conflitos)
+  Etapa 1 - ERs, GLC, FIRST/FOLLOW, LL(1) ...... CONCLUIDA
   Etapa 2 - Analisador lexico .................. NAO IMPLEMENTADO
+            (casos de teste prontos em testes/lexico/)
   Etapa 3 - Analisador sintatico ............... NAO IMPLEMENTADO
+            (casos de teste prontos em testes/sintatico/)
 
 Nao existe ainda codigo executavel (compilador.c).
 

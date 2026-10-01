@@ -10,16 +10,15 @@ do enunciado.
 
 ## Estado atual
 
-**Concluídas — somente documentação:** Fase A (auditoria e requisitos), Fase A.1 (conferência contra o
-PDF oficial), Fase B (especificação léxica), Fase C (gramática) e Fase D (FIRST/FOLLOW e validação LL(1)).
-Não há analisador léxico, analisador sintático nem `compilador.c` neste momento. A próxima fase é a
-**E (casos de teste derivados da especificação e da gramática)**.
+**Concluídas — documentação e testes:** Fases A, A.1, B (especificação léxica), C (gramática),
+D (FIRST/FOLLOW e validação LL(1)) e E (suíte de testes). Não há analisador léxico, analisador sintático
+nem `compilador.c` neste momento. A próxima fase é a **F (implementação do analisador léxico)**.
 
 | Etapa do enunciado | Peso | Situação |
 |---|---|---|
-| 1 — ERs + GLC | 20% | **ERs: concluídas** (`docs/especificacao-lexica.md`). **GLC: concluída** (`docs/gramatica.md`). **FIRST/FOLLOW: concluídos**; **LL(1): validada** (`docs/analise-ll1.md`) |
-| 2 — Analisador léxico | 40% | **não implementado** (especificação pronta; implementação na Fase F) |
-| 3 — Analisador sintático | 40% | **não implementado** (gramática pronta; implementação na Fase G) |
+| 1 — ERs + GLC | 20% | **concluída documentalmente e validada**: ERs (`docs/especificacao-lexica.md`), GLC (`docs/gramatica.md`), FIRST/FOLLOW e LL(1) (`docs/analise-ll1.md`) |
+| 2 — Analisador léxico | 40% | implementação **não iniciada**; **testes léxicos prontos** (`testes/lexico/`, 9 válidos com golden + 9 erros) |
+| 3 — Analisador sintático | 40% | implementação **não iniciada**; **testes sintáticos prontos** (`testes/sintatico/`, 19 válidos + 20 erros + 5 limitações) |
 
 ## Abordagem (decisões do grupo)
 
@@ -55,10 +54,11 @@ O nome do arquivo MiniVisualg é sempre recebido por linha de comando.
 | [especificacao-lexica.md](docs/especificacao-lexica.md) | **Contrato léxico congelado (Fase B):** tokens, ERs, atributos, formato de saída, erros. |
 | [gramatica.md](docs/gramatica.md) | **GLC congelada (Fase C):** 91 produções em BNF, sem recursão à esquerda, fatorada; cobertura do Anexo I; derivações manuais. |
 | [analise-ll1.md](docs/analise-ll1.md) | **Validação LL(1) (Fase D):** nullable, FIRST, FOLLOW, SELECT, conflitos, tabela preditiva e mapa de decisão do parser. |
+| [testes.md](docs/testes.md) | **Suíte de testes (Fase E):** matrizes, pontos de falha esperados, cobertura de P01–P91, terminais, `LEX-nn` e DEC. Arquivos em [`testes/`](testes/). |
 | [decisoes.md](docs/decisoes.md) | Decisões do grupo e ambiguidades do material em aberto. |
 | [plano.md](docs/plano.md) | Fases A–J e critérios de saída. |
 
-Previstos nas próximas fases: `testes.md` (Fase E), `arquitetura.md`.
+Previsto nas próximas fases: `arquitetura.md`.
 
 ## Política de branches
 

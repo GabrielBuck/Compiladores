@@ -1,0 +1,63 @@
+id	camada	classe	arquivo	esperado	linha	detalhe	rastreabilidade
+LX-V01	LEXICO	CORE	lexico/validos/LX-V01-minimo.alg	TOKENS	-	programa mínimo; reservadas, STRING com acento, pontuação encostada	REQ-22 REQ-23 LEX-03 LEX-07 LEX-17 DEC-20 DEC-22 DEC-23
+LX-V02	LEXICO	DECISION	lexico/validos/LX-V02-espacado.alg	TOKENS	-	mesmo programa com espaços e TAB; mesma sequência de tokens de LX-V01	REQ-14 AMB-01 DEC-05 LEX-09
+LX-V03	LEXICO	CORE	lexico/validos/LX-V03-tabela-simbolos.alg	TOKENS	-	IDs repetidos reutilizam índice da TS (nome=1, sobrenome=2)	REQ-26 LEX-15 LEX-16 DEC-07 DEC-17
+LX-V04	LEXICO	CORE	lexico/validos/LX-V04-numeros-intervalo.alg	TOKENS	-	0, 1234, 1.50, 1.60 como escritos; 1..4 = NUM_INT INTERVALO NUM_INT	LEX-04 LEX-05 LEX-06 LEX-10 DEC-24
+LX-V05	LEXICO	DECISION	lexico/validos/LX-V05-operadores.alg	TOKENS	-	todos os operadores; OP_REL EQ/NE/LE/GE; OP_MULT MUL/DIV_REAL/DIV_INT/MOD; E; OU (DEC-14); MENOS só em passo -2	LEX-10 LEX-12 LEX-14 LEX-16 DEC-14 DEC-15 DEC-18 DEC-19
+LX-V06	LEXICO	CORE	lexico/validos/LX-V06-strings-comentarios.alg	TOKENS	-	STRING com acento, com // e vazia; comentários de linha inteira e após código descartados	LEX-07 LEX-08 LEX-12 DEC-08 DEC-09 DEC-21
+LX-V07	LEXICO	DECISION	lexico/validos/LX-V07-caixa-identificadores.alg	TOKENS	-	case-sensitive: ALGORITMO/mod/e/ou/Nome/NAO viram ID; formas de ID com maiúscula, _ e dígito	LEX-01 LEX-02 LEX-03 LEX-14 LEX-15 DEC-13 DEC-14 DEC-27
+LX-V08	LEXICO	CORE	lexico/validos/LX-V08-comentario-eof.alg	TOKENS	-	comentário termina no EOF sem newline final	LEX-08 LEX-09 DEC-08 DEC-23
+LX-V09	LEXICO	CORE	lexico/validos/LX-V09-reservadas.alg	TOKENS	-	as 13 reservadas ausentes dos outros goldens: se entao senao fimse enquanto fimenquanto procedimento fimprocedimento funcao fimfuncao retorne verdadeiro falso	LEX-03 LEX-17 DEC-20
+LX-E01	LEXICO	CORE	lexico/erros/LX-E01-caractere-invalido.alg	ERRO_LEXICO	5	caractere fora do alfabeto: @	REQ-24 LEX-13 LEX-18 DEC-26
+LX-E02	LEXICO	DECISION	lexico/erros/LX-E02-id-underscore.alg	ERRO_LEXICO	3	identificador iniciando por _	LEX-02 LEX-13 DEC-27
+LX-E03	LEXICO	DECISION	lexico/erros/LX-E03-id-acento.alg	ERRO_LEXICO	3	letra acentuada fora de string/comentário (ç)	LEX-02 LEX-13 DEC-27 AMB-08
+LX-E04	LEXICO	DECISION	lexico/erros/LX-E04-menor-isolado.alg	ERRO_LEXICO	6	< isolado não é token	LEX-11 DEC-16 AMB-03
+LX-E05	LEXICO	DECISION	lexico/erros/LX-E05-maior-isolado.alg	ERRO_LEXICO	6	> isolado não é token	LEX-11 DEC-16 AMB-03
+LX-E06	LEXICO	DECISION	lexico/erros/LX-E06-ponto-isolado.alg	ERRO_LEXICO	5	1. = NUM_INT seguido de . isolado	LEX-06 LEX-13 DEC-24
+LX-E07	LEXICO	CORE	lexico/erros/LX-E07-string-nao-fechada-linha.alg	ERRO_LEXICO	4	STRING aberta até a quebra de linha	REQ-24 LEX-07 DEC-09 DEC-26
+LX-E08	LEXICO	CORE	lexico/erros/LX-E08-string-nao-fechada-eof.alg	ERRO_LEXICO	4	STRING aberta até o EOF (sem newline final)	REQ-24 LEX-07 DEC-09 DEC-26
+LX-E09	LEXICO	DECISION	lexico/erros/LX-E09-operador-potencia.alg	ERRO_LEXICO	5	^ não pertence ao vocabulário	LEX-13 REQ-04
+SY-V01	SINTATICO	CORE	sintatico/validos/SY-V01-minimo.alg	ACEITA	-	programa mínimo, var vazio, comentário, escreval	P01 P02 P04 P09 P07 P54 DEC-29
+SY-V02	SINTATICO	CORE	sintatico/validos/SY-V02-declaracoes.alg	ACEITA	-	quatro tipos simples; vários IDs numa declaração; verdadeiro	P10-P14 P17-P20 P86
+SY-V03	SINTATICO	CORE	sintatico/validos/SY-V03-entrada-saida.alg	ACEITA	-	leia, escreva, escreval com vários argumentos	P49 P50 P52 P53 P54 P65-P67 DEC-44
+SY-V04	SINTATICO	CORE	sintatico/validos/SY-V04-aritmetica.alg	ACEITA	-	+ * / \ MOD; n1 + n2 * 2 (hierarquia)	P76-P81 DEC-35
+SY-V05	SINTATICO	CORE	sintatico/validos/SY-V05-relacionais.alg	ACEITA	-	= <> <= >= como OP_REL	P73-P75 DEC-18 DEC-35
+SY-V06	SINTATICO	DECISION	sintatico/validos/SY-V06-logicos.alg	ACEITA	-	E (Anexo I) e OU (definido textualmente; aceito por DEC-31); falso; real 1.50	P69-P72 P84 P87 P88 DEC-31 DEC-32
+SY-V07	SINTATICO	CORE	sintatico/validos/SY-V07-se.alg	ACEITA	-	se sem senao, com parênteses	P40 P55 P57 AMB-10
+SY-V08	SINTATICO	CORE	sintatico/validos/SY-V08-se-aninhado.alg	ACEITA	-	se/senao aninhado dentro de senao	P55 P56 P57 LL1-14
+SY-V09	SINTATICO	CORE	sintatico/validos/SY-V09-para.alg	ACEITA	-	para sem passo	P41 P58 P60
+SY-V10	SINTATICO	CORE	sintatico/validos/SY-V10-para-passo.alg	ACEITA	-	para com passo -2	P58 P59 P62 DEC-34 LL1-15
+SY-V11	SINTATICO	CORE	sintatico/validos/SY-V11-enquanto.alg	ACEITA	-	enquanto com parênteses; contador <- contador + 1	P42 P63 P77 AMB-10
+SY-V12	SINTATICO	CORE	sintatico/validos/SY-V12-vetores.alg	ACEITA	-	declaração de vetor, atribuição, leitura e uso indexados	P15 P16 P46 P51 P89 DEC-36 DEC-37 DEC-42
+SY-V13	SINTATICO	DECISION	sintatico/validos/SY-V13-procedimento-sem-parametros.alg	ACEITA	-	procedimento sem parênteses antes de var; chamada ID isolado	P03 P05 P22 P23 P25 P27 P48 DEC-28 DEC-29 DEC-41 AMB-05
+SY-V14	SINTATICO	DECISION	sintatico/validos/SY-V14-procedimento-com-parametro.alg	ACEITA	-	procedimento com parâmetro, sem var; chamada com argumento	P03 P06 P26 P29 P31 P32 P47 DEC-28 DEC-29 AMB-05
+SY-V15	SINTATICO	CORE	sintatico/validos/SY-V15-funcao-somar.alg	ACEITA	-	função somar antes de var; retorne a + b; chamada em expressão	P24 P28 P30 P43 P64 P90 DEC-37 DEC-40
+SY-V16	SINTATICO	CORE	sintatico/validos/SY-V16-funcao-eh-par.alg	ACEITA	-	função eh_par; retorne dentro de se; v MOD 2 = 0; chamada como argumento	P28 P55 P56 P64 P80 P74 P86 P87
+SY-V17	SINTATICO	DECISION	sintatico/validos/SY-V17-rotinas-mistas.alg	ACEITA	-	procedimentos e função misturados no mesmo programa	P21 P23 P24 DEC-30
+SY-V18	SINTATICO	DECISION	sintatico/validos/SY-V18-para-limites-expressao.alg	ACEITA	-	limites de para como expressão; passo positivo 2	P58 P61 DEC-43 DEC-34
+SY-V19	SINTATICO	DECISION	sintatico/validos/SY-V19-comandos-id-consecutivos.alg	ACEITA	-	duas chamadas sem parâmetros seguidas (ID ID) sem newline como token	P34 P36 P48 LL1-07 DEC-36 DEC-47
+SY-E01	SINTATICO	DECISION	sintatico/erros/SY-E01-sem-var-sem-rotina.alg	ERRO_SINTATICO	2	sem var e sem rotina: INICIO em <corpo_programa>	P02 P03 DEC-29 LL1-12
+SY-E02	SINTATICO	DECISION	sintatico/erros/SY-E02-bloco-vazio.alg	ERRO_SINTATICO	4	lista de comandos vazia: FIMALGORITMO em <lista_comandos>	P33 DEC-39
+SY-E03	SINTATICO	CORE	sintatico/erros/SY-E03-declaracao-sem-dois-pontos.alg	ERRO_SINTATICO	3	declaração sem dois-pontos: INTEIRO em <lista_ids_cauda>	P10 P12 P13 LL1-16
+SY-E04	SINTATICO	DECISION	sintatico/erros/SY-E04-vetor-limite-id.alg	ERRO_SINTATICO	4	limite de vetor ID: esperado NUM_INT em P16	P16 DEC-42
+SY-E05	SINTATICO	DECISION	sintatico/erros/SY-E05-procedimento-parenteses-vazios.alg	ERRO_SINTATICO	2	procedimento p(): FECHA_PAR em <lista_parametros>	P26 P29 DEC-41
+SY-E06	SINTATICO	DECISION	sintatico/erros/SY-E06-funcao-sem-parametros.alg	ERRO_SINTATICO	2	funcao f(): FECHA_PAR em <lista_parametros>	P28 P29 DEC-40
+SY-E07	SINTATICO	DECISION	sintatico/erros/SY-E07-escreval-vazio.alg	ERRO_SINTATICO	4	escreval(): FECHA_PAR em <lista_argumentos>	P54 P65 DEC-44
+SY-E08	SINTATICO	DECISION	sintatico/erros/SY-E08-leia-multiplos.alg	ERRO_SINTATICO	5	leia(a, b): VIRGULA em <indice_opcional>	P49 P50 P52 DEC-44
+SY-E09	SINTATICO	DECISION	sintatico/erros/SY-E09-se-sem-parenteses.alg	ERRO_SINTATICO	5	se sem parênteses: esperado ABRE_PAR em P55	P55 AMB-10
+SY-E10	SINTATICO	DECISION	sintatico/erros/SY-E10-enquanto-sem-parenteses.alg	ERRO_SINTATICO	6	enquanto sem parênteses: esperado ABRE_PAR em P63	P63 AMB-10
+SY-E11	SINTATICO	CORE	sintatico/erros/SY-E11-se-sem-entao.alg	ERRO_SINTATICO	6	se sem entao: ESCREVAL (linha seguinte) onde P55 espera ENTAO	P55 REQ-31
+SY-E12	SINTATICO	CORE	sintatico/erros/SY-E12-se-sem-fimse.alg	ERRO_SINTATICO	8	se sem fimse: FIMALGORITMO em <senao_opcional>	P55 P56 P57 LL1-14
+SY-E13	SINTATICO	DECISION	sintatico/erros/SY-E13-relacional-encadeado.alg	ERRO_SINTATICO	6	a = b = c: segundo OP_REL em <expr_logica_cauda>	P74 DEC-35 LL1-17
+SY-E14	SINTATICO	DECISION	sintatico/erros/SY-E14-subtracao-binaria.alg	ERRO_SINTATICO	5	a <- b - c: MENOS (lexicamente válido) em <cauda_primario>	P91 DEC-33 AMB-06
+SY-E15	SINTATICO	DECISION	sintatico/erros/SY-E15-passo-id.alg	ERRO_SINTATICO	5	passo x: ID em <numero_passo>	P61 P62 DEC-34
+SY-E16	SINTATICO	DECISION	sintatico/erros/SY-E16-passo-menos-id.alg	ERRO_SINTATICO	5	passo -x: esperado NUM_INT em P62	P62 DEC-34
+SY-E17	SINTATICO	DECISION	sintatico/erros/SY-E17-chamada-vazia.alg	ERRO_SINTATICO	9	dobro() em expressão: FECHA_PAR em <lista_argumentos>	P90 P65 DEC-44
+SY-E18	SINTATICO	DECISION	sintatico/erros/SY-E18-procedimento-sem-param-com-parenteses.alg	ERRO_SINTATICO	7	linha_decorativa(): FECHA_PAR em <lista_argumentos>	P47 P65 DEC-41
+SY-E19	SINTATICO	CORE	sintatico/erros/SY-E19-falta-fimalgoritmo.alg	ERRO_SINTATICO	4	EOF antes de FIMALGORITMO (arquivo sem newline final)	P01 P35 DEC-46 LL1-19
+SY-E20	SINTATICO	DECISION	sintatico/erros/SY-E20-comentario-bloco.alg	ERRO_SINTATICO	5	/* */ não é comentário: OP_MULT em <lista_comandos_cauda>	DEC-08 LEX-12 P34 P35
+SY-L01	SINTATICO	LIMITATION	sintatico/limites/SY-L01-retorne-fora-funcao.alg	ACEITA	-	retorne no principal: aceito sintaticamente (restrição contextual)	P43 P64 DEC-38
+SY-L02	SINTATICO	LIMITATION	sintatico/limites/SY-L02-id-isolado.alg	ACEITA	-	variável isolada tem a forma de chamada sem parâmetros	P48 DEC-36
+SY-L03	SINTATICO	LIMITATION	sintatico/limites/SY-L03-chamada-nao-declarada.alg	ACEITA	-	chamada de rotina não declarada	P47 REQ-35
+SY-L04	SINTATICO	LIMITATION	sintatico/limites/SY-L04-aridade-incompativel.alg	ACEITA	-	aridade diferente da declaração; GLC não compara assinatura	P47 P66 REQ-35
+SY-L05	SINTATICO	LIMITATION	sintatico/limites/SY-L05-atribuicao-seguida-id.alg	ACEITA	-	x <- a seguido de b = dois comandos (sem delimitador de linha)	P45 P48 LL1-07

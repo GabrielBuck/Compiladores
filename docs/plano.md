@@ -10,7 +10,7 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 | B | Especificação lexical formal — **CONCLUÍDA** | `docs/especificacao-lexica.md` (ERs, tokens, atributos, formato de saída) | 1 (20%) |
 | C | Gramática Livre de Contexto — **CONCLUÍDA** | `docs/gramatica.md` | 1 (20%) |
 | D | FIRST / FOLLOW / nullable + verificação LL(1) — **CONCLUÍDA** | `docs/analise-ll1.md` (+ resumo em `gramatica.md` §19) | 1 → 3 |
-| E | Casos de teste derivados da gramática | `testes/` + `docs/testes.md` | 2 e 3 |
+| E | Casos de teste derivados da gramática — **CONCLUÍDA** | `testes/` + `docs/testes.md` | 2 e 3 |
 | F | Analisador léxico | `obterToken()`, TS, saída tela/arquivo | 2 (40%) |
 | G | Analisador sintático | funções por não-terminal, `nextToken()`, derivação | 3 (40%) |
 | H | Integração | `compilador.c` único, `argc/argv`, entrega | 2 + 3 |
@@ -82,8 +82,15 @@ Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Conte
 - **Fora do escopo cumprido:** nenhum código, nenhum parser/lexer, nenhum teste executável.
 - **Critério de saída:** gramática LL(1) sem conflitos — **atendido** (sem emenda).
 
-## Fase E — Testes derivados  — PRÓXIMA
+## Fase E — Testes derivados  — CONCLUÍDA
 
+- **Saída:** `testes/` (62 testes: 9 LX-V com golden, 9 LX-E com `.erro.txt`, 19 SY-V, 20 SY-E, 5 SY-L;
+  `manifest.tsv`; `README.md`) e `docs/testes.md`.
+- **Critérios atendidos:** matriz pronta; goldens prontos; cobertura de P01–P91 por SY-V; os 49 terminais em
+  golden léxico e em SY-V; `LEX-01`…`LEX-18` cobertas; validação descartável (tokenizador de referência +
+  LL(1) estrito) sem divergências. Sem código; P01–P91 e o contrato léxico inalterados.
+- Lacuna encontrada e registrada: linha do `TOKEN_EOF` (AMB-14).
+- Plano original da fase (registro):
 - Base: `especificacao-lexica.md` (regras `LEX-nn`, §18 casos-limite), `gramatica.md` (§13 cobertura,
   §15 rejeitadas) e `analise-ll1.md` (§13 mapa de decisão: cada entrada da tabela é um caso positivo; cada
   célula vazia relevante, um caso de erro sintático).
@@ -93,13 +100,14 @@ Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Conte
 - Casos sintáticos: falta de `fimse`, `entao` ausente, parêntese não fechado etc.
 - Cada teste aponta para o `REQ-`/`DEC-`/`AMB-` que o motiva.
 
-## Fase F — Léxico
+## Fase F — Léxico  — PRÓXIMA
 
 - `obterToken()`, scanner por caractere, tabela de fixos, reconhecedores de classe, TS, contador de linhas.
 - Saída em tela e em arquivo, mesmo conteúdo.
 - **Antes da primeira compilação:** ver `decisoes.md`, OP-02 (testar `C:/msys64/mingw64/bin/gcc.exe`, ajustar
   o PATH só na sessão, `gcc --version`). Nada é instalado sem autorização.
-- **Critério de saída:** compila com o comando de referência, 0 warnings; testes da Fase E (léxicos) executados.
+- **Critério de saída:** compila com o comando de referência, 0 warnings; os 9 goldens `.tokens.txt` e os 9
+  `.erro.txt` de `testes/lexico/` conferidos (comparação literal, tolerando só CRLF/LF).
 
 ## Fase G — Sintático
 

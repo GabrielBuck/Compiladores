@@ -130,6 +130,16 @@ Somente referências; origens inalteradas. As decisões da Fase C são `GRUPO` (
 | REQ-41 (GLC) | §6 — P01–P91 |
 | REQ-42 (sem recursão à esquerda, fatorada; FIRST/FOLLOW) | §17 (auditoria feita); FIRST/FOLLOW/SELECT e prova LL(1) em `analise-ll1.md` (Fase D, DEC-47) |
 
+## Rastreabilidade: requisito → testes (Fase E)
+
+| Requisito | Testes (`testes/`, matriz em `docs/testes.md`) |
+|---|---|
+| REQ-22, REQ-23 (listagem de tokens) | goldens `LX-V01`…`LX-V09` (`.tokens.txt`) |
+| REQ-24 (erro léxico: linha + sequência) | `LX-E01`…`LX-E09` (`.erro.txt`) |
+| REQ-31 (erro sintático: token + linha) | `SY-E01`…`SY-E20` (`docs/testes.md` §8) |
+| REQ-04 (só o Anexo I) | SY-V (CORE) + rejeições SY-E; decisões marcadas DECISION |
+| REQ-35 (sem semântica) | `SY-L01`…`SY-L05` (aceitos sintaticamente) |
+
 ## Restrições de processo do grupo (todas as sessões)
 
 Origem: `GRUPO`.

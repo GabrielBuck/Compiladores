@@ -10,14 +10,13 @@ do enunciado.
 
 ## Estado atual
 
-**Concluídas — documentação e testes:** Fases A, A.1, B (especificação léxica), C (gramática),
-D (FIRST/FOLLOW e validação LL(1)) e E (suíte de testes). Não há analisador léxico, analisador sintático
-nem `compilador.c` neste momento. A próxima fase é a **F (implementação do analisador léxico)**.
+**Fases A, A.1, B, C, D, E e F concluídas.** O `compilador.c` implementa **somente o analisador léxico**;
+o analisador sintático **não existe ainda**. A próxima fase é a **G (analisador sintático)**.
 
 | Etapa do enunciado | Peso | Situação |
 |---|---|---|
 | 1 — ERs + GLC | 20% | **concluída documentalmente e validada**: ERs (`docs/especificacao-lexica.md`), GLC (`docs/gramatica.md`), FIRST/FOLLOW e LL(1) (`docs/analise-ll1.md`) |
-| 2 — Analisador léxico | 40% | implementação **não iniciada**; **testes léxicos prontos** (`testes/lexico/`, 9 válidos com golden + 9 erros) |
+| 2 — Analisador léxico | 40% | **implementado e testado** (`compilador.c`): suíte léxica 9/9 + 9/9, e os 44 arquivos sintáticos tokenizam sem erro léxico. Ver `docs/arquitetura.md` e `docs/testes.md` §16 |
 | 3 — Analisador sintático | 40% | implementação **não iniciada**; **testes sintáticos prontos** (`testes/sintatico/`, 19 válidos + 20 erros + 5 limitações) |
 
 ## Abordagem (decisões do grupo)
@@ -29,13 +28,15 @@ nem `compilador.c` neste momento. A próxima fase é a **F (implementação do a
 - Léxico e sintático integrados sob demanda: `nextToken()` → `obterToken()`. Isto é **requisito do enunciado**
   (REQ-32, REQ-28); o restante do desenho é do grupo (`DEC-04`).
 - Primeiro erro léxico ou sintático encerra o processamento (`DEC-10`). O código de retorno nesse caso
-  **ainda não está decidido** (`AMB-13`).
+  **ainda não está decidido** (`AMB-13`); o código usa **0 provisoriamente** (`DEC-55`), numa única constante.
+- Léxico: fonte lida em bytes (`DEC-48`), lexemas e tabela de símbolos dinâmicos (`DEC-49`, `DEC-50`), saída em
+  `tokens.txt` (`DEC-52`), token emitido dentro de `obterToken()` (`DEC-56`).
 - Léxico case-sensitive; 50 nomes de token; `<` e `>` isolados e `.` isolado são erro léxico
   (`DEC-13`, `DEC-16`, `DEC-24`).
 - Gramática: sub-rotinas antes do principal (`DEC-28`); `OU` aceito no mesmo nível de `E`
   (`DEC-31`, `DEC-32`); sem subtração, `-` só em `passo -2` (`DEC-33`, `DEC-34`).
 
-## Compilação e execução (quando houver código)
+## Compilação e execução
 
 ```
 gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
@@ -43,7 +44,9 @@ gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
 .\compilador.exe programa.alg      # Windows
 ```
 
-O nome do arquivo MiniVisualg é sempre recebido por linha de comando.
+O nome do arquivo MiniVisualg é sempre recebido por linha de comando. **Por enquanto o programa só faz a
+análise léxica:** mostra os tokens na tela e grava os mesmos em `tokens.txt` (diretório atual; não é versionado).
+Compilado e testado com `gcc 15.2.0` (MSYS2 mingw64): 0 erros e 0 warnings. Exige C99 ou posterior.
 
 ## Documentação (`docs/`)
 
@@ -55,10 +58,9 @@ O nome do arquivo MiniVisualg é sempre recebido por linha de comando.
 | [gramatica.md](docs/gramatica.md) | **GLC congelada (Fase C):** 91 produções em BNF, sem recursão à esquerda, fatorada; cobertura do Anexo I; derivações manuais. |
 | [analise-ll1.md](docs/analise-ll1.md) | **Validação LL(1) (Fase D):** nullable, FIRST, FOLLOW, SELECT, conflitos, tabela preditiva e mapa de decisão do parser. |
 | [testes.md](docs/testes.md) | **Suíte de testes (Fase E):** matrizes, pontos de falha esperados, cobertura de P01–P91, terminais, `LEX-nn` e DEC. Arquivos em [`testes/`](testes/). |
+| [arquitetura.md](docs/arquitetura.md) | **Arquitetura do analisador léxico (Fase F):** organização de `compilador.c`, `Token`, ownership, catálogos, leitor, encoding, saída, erros. |
 | [decisoes.md](docs/decisoes.md) | Decisões do grupo e ambiguidades do material em aberto. |
 | [plano.md](docs/plano.md) | Fases A–J e critérios de saída. |
-
-Previsto nas próximas fases: `arquitetura.md`.
 
 ## Política de branches
 

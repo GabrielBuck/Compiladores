@@ -424,6 +424,73 @@ professora; as marcadas "revisável" podem mudar por instrução dela.
   (DEC-46). Se a gramática mudar (ex.: resposta da professora sobre AMB-05), a análise LL(1) inteira deve
   ser refeita e registrada.
 
+## Decisões da Fase F — implementação do analisador léxico (DEC-48 a DEC-56)
+
+Todas são `GRUPO`. Detalhe de implementação em `arquitetura.md`. Nenhuma altera o contrato léxico da Fase B.
+
+## DEC-48 · Fonte em bytes; política operacional de encoding  — DECIDIDA (resolve AMB-08 operacionalmente)
+
+- **Problema:** os exemplos têm acentos em strings e comentários, e o arquivo pode estar em UTF-8 ou Latin-1.
+- **Decisão:** a fonte é aberta com `"rb"` e lida **por bytes**. Bytes ≥ 0x80 dentro de `STRING` e de comentário
+  são conteúdo opaco; **fora** deles são erro léxico. Para o erro, um UTF-8 **bem formado** de 2–4 bytes é
+  reportado inteiro (`ç` = `C3 A7`); senão só o byte. ID continua ASCII.
+- **Justificativa:** aceita `"João"` em qualquer das duas codificações sem tocar na ER de ID; o erro mostra o
+  caractere e não bytes soltos.
+- **Impacto:** **não** é suporte a Unicode. A validação UTF-8 é estrutural, sem verificar formas supérfluas.
+
+## DEC-49 · Lexemas alocados dinamicamente  — DECIDIDA
+
+- **Decisão:** cada token possui o seu `lexeme`, montado em um `LexemeBuffer` de capacidade dobrada; `liberarToken()`
+  libera. **Sem limite fixo** de tamanho. Falha de memória é falha **operacional**, não erro léxico.
+- **Justificativa:** o enunciado não fornece limite; impor `MAX_LEXEME` criaria uma regra que a linguagem não tem
+  (fecha parte de AMB-14).
+
+## DEC-50 · Tabela de símbolos dinâmica, busca linear  — DECIDIDA
+
+- **Decisão:** vetor dinâmico de nomes; 1ª ocorrência duplica o nome e devolve `posição + 1`; busca linear.
+- **Justificativa:** projeto pequeno, fácil de defender; a **ordem de inserção** já é o atributo esperado nos
+  goldens (DEC-07). Sem limite arbitrário de identificadores.
+
+## DEC-51 · Leitor com lookahead próprio, sem múltiplos `ungetc`  — DECIDIDA
+
+- **Decisão:** `Scanner` com vetor de lookahead de 4 bytes; `peekChar(n)` não consome nem altera a linha.
+- **Justificativa:** o padrão C só garante um pushback e a regra do ponto (`1..4`) precisa olhar 2 bytes, e a
+  validação UTF-8, até 3.
+
+## DEC-52 · `tokens.txt` como arquivo de saída  — DECIDIDA (resolve parte de AMB-14)
+
+- **Problema:** o enunciado exige um arquivo de tokens mas não dá o nome (REQ-22).
+- **Decisão:** `tokens.txt` no diretório de trabalho atual, aberto com `"wb"` e sobrescrito a cada execução; entra
+  no `.gitignore` (os goldens `*.tokens.txt` **não** são ignorados).
+- **Justificativa:** nome simples e previsível, fácil de executar e de comparar.
+
+## DEC-53 · Erro léxico espelhado na tela e no arquivo  — DECIDIDA
+
+- **Decisão:** `ERRO LÉXICO - linha <n> - sequência: <sequência>` (DEC-26) vai a **stdout e a `tokens.txt`**, depois
+  dos tokens já emitidos. Erros **operacionais** vão a stderr.
+- **Justificativa:** o arquivo reproduz tudo o que o analisador mostrou; a distinção erro de fonte × operacional
+  fica explícita.
+
+## DEC-54 · Linha do `TOKEN_EOF`  — DECIDIDA (resolve parte de AMB-14)
+
+- **Decisão:** `TOKEN_EOF.line` = linha lógica do cursor ao observar o fim, depois de descartar whitespace e
+  comentários. Conteúdo na linha 4 seguido de `\n` → EOF na 5; sem `\n` final → na 4.
+- **Justificativa:** é a posição do cursor após consumir toda a entrada; servirá a "fim de arquivo inesperado".
+- **Verificação:** harness descartável com 8 casos de borda, incluindo CRLF e arquivo vazio.
+
+## DEC-55 · `EXIT_SOURCE_ERROR` provisoriamente 0  — DECIDIDA (provisória; **AMB-13 continua aberta**)
+
+- **Decisão:** erro léxico **identificado** → imprime, encerra e sai com **0**; falhas operacionais → ≠ 0. Tudo em
+  **uma constante** (`#define EXIT_SOURCE_ERROR 0`).
+- **Justificativa:** o critério de avaliação penaliza finalização ≠ 0; enquanto a professora não esclarece, esta é a
+  escolha que não pune o grupo. **Não** resolve AMB-13: é provisória, centralizada para troca em uma linha.
+
+## DEC-56 · Token emitido dentro de `obterToken()`  — DECIDIDA
+
+- **Decisão:** `obterToken()` emite o token (tela + arquivo, exceto EOF) **antes** de devolvê-lo.
+- **Justificativa:** quando o parser chamar `obterToken()` sob demanda (Fase G), a listagem exigida continuará
+  saindo automaticamente. Resolve a dúvida de DEC-04 sobre onde a listagem é produzida.
+
 ---
 
 # Parte 2 — Ambiguidades do material
@@ -523,7 +590,11 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Classificação:** expectativa das aulas, **não** requisito inequívoco do enunciado.
 - **Impacto:** formato da saída do parser. Decidir na Fase G.
 
-## AMB-08 · Codificação de caracteres (acentos) — EM ABERTO (contrato léxico na Fase B: STRING/comentário opacos; política operacional na Fase F)
+## AMB-08 · Codificação de caracteres (acentos) — RESOLVIDA OPERACIONALMENTE na Fase F (DEC-48)
+
+> **Resolução (Fase F):** o scanner lê **bytes**; bytes ≥ 0x80 são conteúdo opaco dentro de STRING e comentário
+> e erro léxico fora deles; ID continua ASCII. **Não** é suporte geral a Unicode. Texto da Fase B abaixo,
+> preservado como histórico.
 
 > **Fase B:** STRING e comentário tratam o conteúdo como **texto opaco**; `"Olá, mundo!"` e `"João"` devem
 > ser aceitos; IDs são ASCII. Como os bytes são lidos (UTF-8 vs. Windows-1252) fica para a Fase F.
@@ -602,7 +673,11 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
   definido na **Fase B** e registrado lá.
 - **Impacto:** `enum TokenName`, saída do léxico, testes.
 
-## AMB-13 · Código de retorno em execução com erro léxico/sintático — EM ABERTO
+## AMB-13 · Código de retorno em execução com erro léxico/sintático — EM ABERTO (valor provisório no código: DEC-55)
+
+> **Fase F:** o código usa `EXIT_SOURCE_ERROR = 0` **provisoriamente** (DEC-55), centralizado numa linha, porque
+> o critério de avaliação penaliza retorno ≠ 0. **A ambiguidade NÃO está resolvida**: continua a recomendação de
+> confirmar com a professora antes da entrega.
 
 - **Problema:** o enunciado diz duas coisas que podem entrar em tensão:
   (A) ao ocorrer erro léxico/sintático, apresentar a mensagem exigida e **finalizar todo o processo**;
@@ -618,7 +693,14 @@ Nenhuma delas pode ser resolvida consultando o Visualg externo. Todas dependem d
 - **Ação:** idealmente **confirmar com a professora antes da entrega**; decisão final nas Fases H/I.
 - **Impacto:** testes de erro não verificam exit status até lá; `main` de `compilador.c`.
 
-## AMB-14 · Detalhes operacionais da saída léxica — EM ABERTO (Fase F)
+## AMB-14 · Detalhes operacionais da saída léxica — PARCIALMENTE RESOLVIDA na Fase F
+
+> **Resolvido na Fase F:** (1) arquivo de saída = `tokens.txt` (DEC-52); (2) erro léxico em stdout **e**
+> `tokens.txt`, erros operacionais em stderr (DEC-53); (3) limites: lexemas e TS sem limite fixo, graças às
+> estruturas dinâmicas (DEC-49, DEC-50); estouro de `long long`/`double` é falha de **representação do
+> implementador**, não regra da linguagem, e sai com status ≠ 0; (4) linha do `TOKEN_EOF` = posição lógica do
+> cursor (DEC-54). **Pode permanecer em aberto:** detalhes da saída integrada ao parser, se houver. Texto
+> original abaixo, preservado como histórico.
 
 - **Problema:** o material não define, e esta fase não congela: (1) o **nome/caminho do arquivo de saída**
   de tokens; (2) **onde** a mensagem de erro é impressa (stdout/stderr) e se também entra no arquivo de
@@ -675,4 +757,4 @@ Itens que o material não resolve e que o grupo só decide por conta própria se
 | AMB-10 parênteses em `se`/`enquanto` | Decidido de forma conservadora; revisável. |
 | AMB-11 seguir a Figura 2 literalmente? | **Resolvida (formato vs. vocabulário)**, revisável: o enunciado a apresenta como ilustrativa. |
 | AMB-12 nome do token (`ID`/`IDENTIFICADOR`) | **Decidida (DEC-17: `ID`).** O enunciado usa ambos nos exemplos; não se afirma que o outro esteja errado. |
-| AMB-13 código de retorno em erro | O enunciado exige encerrar **e** penaliza retorno ≠ 0. **Confirmar com a professora.** |
+| AMB-13 código de retorno em erro | O enunciado exige encerrar **e** penaliza retorno ≠ 0. **Confirmar com a professora.** O código usa 0 provisoriamente (DEC-55). |

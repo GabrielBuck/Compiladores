@@ -1,0 +1,10 @@
+# Artefatos de compilacao e execucao (Fase F)
+compilador
+compilador.exe
+tokens.txt
+*.o
+*.obj
+*.exe
+
+# NAO ignorar: *.alg (programas de teste) e *.tokens.txt (goldens em testes/lexico/esperados).
+# Por isso nao existe um padrao generico "*.txt".

@@ -140,6 +140,22 @@ Somente referências; origens inalteradas. As decisões da Fase C são `GRUPO` (
 | REQ-04 (só o Anexo I) | SY-V (CORE) + rejeições SY-E; decisões marcadas DECISION |
 | REQ-35 (sem semântica) | `SY-L01`…`SY-L05` (aceitos sintaticamente) |
 
+## Rastreabilidade: requisito → implementação léxica (Fase F)
+
+Somente referências; origens inalteradas.
+
+| Requisito | Onde está no `compilador.c` / documentação (`arquitetura.md`) |
+|---|---|
+| REQ-05 (nomes no topo do fonte) | cabeçalho de `compilador.c` |
+| REQ-13 (arquivo por `argv`) | `main`, `iniciarAnalisadorLexico` (§12 da arquitetura) |
+| REQ-20, REQ-21, REQ-29 (struct de token) | `Token` (§3) |
+| REQ-22, REQ-23 (arquivo **e** tela, formato) | `formatarToken`, `emitirToken`, `tokens.txt` (§10) |
+| REQ-24 (erro léxico) | `erroLexico`, `formatarErroLexico` (§11) |
+| REQ-26 (tabela de símbolos) | `SymbolTable`, `tabelaSimbolosObter` (§7) |
+| REQ-27 (não basta lista) | `lerIdentificadorOuReservada`, `lerNumero`, `lerString` (§6) |
+| REQ-28, REQ-32 (`obterToken()`) | `Token obterToken(void)` (§6); `nextToken()` fica para a Fase G |
+| REQ-10 a REQ-12 (compilação sem warnings) | `testes.md` §16 (gcc 15.2.0, 0 warnings) |
+
 ## Restrições de processo do grupo (todas as sessões)
 
 Origem: `GRUPO`.

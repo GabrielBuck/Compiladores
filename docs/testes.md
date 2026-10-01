@@ -484,3 +484,64 @@ verificação direta na Fase F; por isso foi acrescentado o **LX-V09**. Nenhum t
 | validação descartável passou | ✔ |
 | nenhuma alteração em P01–P91 nem no contrato léxico | ✔ |
 | nenhum código | ✔ |
+
+## 16. Execução na Fase F
+
+Primeira execução **real** dos testes, contra o `compilador.exe` da Fase F (só o analisador léxico).
+Os testes **não foram alterados**: os goldens e os `.erro.txt` da Fase E foram usados como estavam.
+
+| Item | Valor |
+|---|---|
+| Compilador | `gcc.exe (Rev8, Built by MSYS2 project) 15.2.0` (`C:\msys64\mingw64\bin`, só no `PATH` da sessão) |
+| Comando | `gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador` |
+| Resultado da compilação | 0 erros, 0 warnings (o `gcc` não imprimiu nada; exit code 0) |
+| Execução | `compilador.exe <arquivo.alg>` com diretório de trabalho temporário (gera `tokens.txt`) |
+| Comparação | linha a linha, **normalizando CRLF → LF** (efeito do `core.autocrlf=true` do Git no Windows); o conteúdo lógico dos goldens não foi tocado |
+
+### 16.1 Resultado
+
+| Grupo | Resultado | Verificado |
+|---|---|---|
+| **LX-V01…LX-V09** | **9/9** | stdout = golden; `tokens.txt` = golden; `tokens.txt` sem `\r`; nenhuma linha de EOF; nenhum `ERRO LÉXICO`; stderr vazio; exit 0 |
+| **LX-E01…LX-E09** | **9/9** | uma única linha `ERRO LÉXICO`, a última; tipo, **linha** e **sequência** = `.erro.txt`; tela = `tokens.txt` (erro incluído); tokens anteriores = prefixo da referência; exit 0 (provisório) |
+| **Sintáticos (19 SY-V + 20 SY-E + 5 SY-L)** | **44/44** lexicamente válidos | nenhum `ERRO LÉXICO`; tokenização idêntica à do tokenizador de referência da Fase E; exit 0 |
+
+Os 44 arquivos **não** foram classificados como `ACEITA`/`ERRO_SINTATICO`: o parser ainda não existe. O único
+resultado registrado para eles é *"tokenização concluída sem erro léxico"*.
+
+Pontos críticos:
+
+- **LX-E03 (`preço`):** sequência reportada = `ç`, em **bytes `C3 A7`** em `tokens.txt` (não `Ã§`, não hexadecimal,
+  não `?`). A sequência da tela depende da *code page* do console; `tokens.txt` é a referência dos bytes.
+- **LX-V06:** `"http://exemplo"` e `"a // b"` não iniciam comentário; `""` é uma `STRING` válida; o comentário com
+  `@`, aspas e acentos é descartado.
+- **LX-V07:** índices exatamente `ALGORITMO`=1, `mod`=2, `e`=3, `ou`=4, `Nome`=5, `nome`=6, `NAO`=7,
+  `portaAberta`=8, `linha_decorativa`=9, `n1`=10.
+- **LX-V09:** as 13 reservadas que faltavam nos outros goldens saem do mesmo catálogo alfabético, sem lógica
+  especial para o teste.
+- **Arquivos sem `\n` final** (LX-V08, LX-E08, SY-E19): não foram alterados e o scanner funciona igual.
+
+### 16.2 Verificações adicionais (além da suíte oficial)
+
+Todas passaram; os resultados esperados vêm do contrato (§12 da especificação) ou foram escritos antes de rodar.
+
+| Verificação | Resultado |
+|---|---|
+| 18 casos do contrato (`1..4`, `1...4`, `1.5.3`, `12abc`, `abc12`, `a<-2`, `a<>b`, `x<=3`, `/* x */`, `1,5`, `"a\"`, `007 1.60`, `a - b`, `x := 3`, `1.`, `.5`, `\x01`, `x\f`) | 18/18 |
+| 6 casos de bytes (UTF-8 truncado, início sem continuação, Latin-1 `ç` fora de string, emoji de 4 bytes, Latin-1 dentro de string, bytes ≥ 0x80 em comentário) | 6/6 |
+| CRLF: LX-V03, LX-V06 e LX-V08 convertidos para `\r\n` geram o **mesmo golden** | 3/3 |
+| CR isolado não incrementa a linha | ✔ |
+| linha do `TOKEN_EOF` (8 casos de borda: sem `\n`, com `\n`, `\n\n\n`, comentário, CRLF, vazio) | 8/8 conforme DEC-54 |
+| `9223372036854775807` | aceito |
+| `99999999999999999999` e real de 400 dígitos | `ERRO INTERNO - valor numerico fora da faixa representavel`, exit 1 (não é erro léxico) |
+| ID de 200 000 caracteres, `STRING` de 300 000 e 20 000 identificadores distintos | 20 005 tokens, tela = arquivo, último índice 20 002 |
+| sem argumento / argumento extra / arquivo inexistente | `uso: …` / `uso: …` / `erro: nao foi possivel abrir…`; stderr; exit 1; nenhum `ERRO LÉXICO`; arquivo inexistente não cria `tokens.txt` |
+
+### 16.3 Observações
+
+- **Exit status de erro léxico:** os testes `LX-E` conferem tipo, linha e sequência, **não** o status (AMB-13).
+  O código usa 0 provisoriamente (DEC-55).
+- **Erros sintáticos (SY-E):** dependem do parser; a Fase G os verificará contra a coluna "linha" e a tabela da §8.
+- O harness que rodou tudo isso fica fora do repositório (scratchpad) e não é versionado.
+- Não houve execução sob ferramenta de memória (AddressSanitizer indisponível neste MinGW); ver
+  `arquitetura.md` §15.

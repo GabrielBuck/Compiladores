@@ -11,8 +11,8 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 | C | Gramática Livre de Contexto — **CONCLUÍDA** | `docs/gramatica.md` | 1 (20%) |
 | D | FIRST / FOLLOW / nullable + verificação LL(1) — **CONCLUÍDA** | `docs/analise-ll1.md` (+ resumo em `gramatica.md` §19) | 1 → 3 |
 | E | Casos de teste derivados da gramática — **CONCLUÍDA** | `testes/` + `docs/testes.md` | 2 e 3 |
-| F | Analisador léxico | `obterToken()`, TS, saída tela/arquivo | 2 (40%) |
-| G | Analisador sintático | funções por não-terminal, `nextToken()`, derivação | 3 (40%) |
+| F | Analisador léxico — **CONCLUÍDA** | `obterToken()`, TS, saída tela/arquivo (`compilador.c`, `docs/arquitetura.md`) | 2 (40%) |
+| G | Analisador sintático — **PRÓXIMA** | funções por não-terminal, `nextToken()`, derivação | 3 (40%) |
 | H | Integração | `compilador.c` único, `argc/argv`, entrega | 2 + 3 |
 | I | Tratamento adversarial de erros | testes de erro léxico/sintático, linha correta | 2 + 3 |
 | J | Documentação final e apresentação | `documentacao.pdf`, `readme.txt` final, roteiro oral | todas |
@@ -100,20 +100,25 @@ Itens `ENUNCIADO` sem a marca ✔PDF em `requisitos.md` continuam vindo do Conte
 - Casos sintáticos: falta de `fimse`, `entao` ausente, parêntese não fechado etc.
 - Cada teste aponta para o `REQ-`/`DEC-`/`AMB-` que o motiva.
 
-## Fase F — Léxico  — PRÓXIMA
+## Fase F — Léxico  — CONCLUÍDA
 
-- `obterToken()`, scanner por caractere, tabela de fixos, reconhecedores de classe, TS, contador de linhas.
-- Saída em tela e em arquivo, mesmo conteúdo.
-- **Antes da primeira compilação:** ver `decisoes.md`, OP-02 (testar `C:/msys64/mingw64/bin/gcc.exe`, ajustar
-  o PATH só na sessão, `gcc --version`). Nada é instalado sem autorização.
-- **Critério de saída:** compila com o comando de referência, 0 warnings; os 9 goldens `.tokens.txt` e os 9
-  `.erro.txt` de `testes/lexico/` conferidos (comparação literal, tolerando só CRLF/LF).
+- **Saída:** `compilador.c` (só o analisador léxico), `.gitignore`, `docs/arquitetura.md`; DEC-48…DEC-56;
+  `docs/testes.md` §16.
+- **Critérios atendidos (com execução real):** `gcc 15.2.0` (MSYS2) com o comando de referência, **0 erros e
+  0 warnings**; **LX-V 9/9** e **LX-E 9/9** (stdout e `tokens.txt` = golden, tolerando só CRLF/LF); **44/44**
+  arquivos sintáticos sem erro léxico; operacionais (sem argumento, argumento extra, arquivo inexistente);
+  memória revisada manualmente. Testes, GLC e contrato léxico **inalterados**.
+- **Resolvido:** AMB-08 (operacionalmente) e parte de AMB-14. **Continua aberta:** AMB-13 (o código usa 0
+  provisoriamente, DEC-55).
+- **Fora do escopo cumprido:** nenhum parser, nenhum `nextToken()`/`consome()`, nenhuma função de não-terminal.
 
-## Fase G — Sintático
+## Fase G — Sintático  — PRÓXIMA
 
-- Uma função por não-terminal, `lookahead`, `consome()`, `nextToken()`.
-- Erro sintático com token e linha; decisão final sobre derivação (DEC-11 / AMB-07).
-- **Critério de saída:** compila sem warnings; testes sintáticos executados.
+- Uma função por não-terminal, `lookahead`, `consome()`, `nextToken()` (que chama `obterToken()`).
+- Substitui o driver temporário `executarAnaliseLexica()`; consome `TOKEN_EOF` depois de `<programa>` (DEC-46).
+- Erro sintático com token e linha; decisão final sobre derivação (DEC-11 / AMB-07). Os pontos de falha esperados
+  estão em `docs/testes.md` §8 e o mapa de decisão em `docs/analise-ll1.md` §13.
+- **Critério de saída:** compila sem warnings; os 44 testes sintáticos executados (`ACEITA`/`ERRO_SINTATICO`).
 
 ## Fase H — Integração
 

@@ -69,6 +69,5 @@ aceitou em modos GNU anteriores compatíveis, como `-std=gnu99`, por extensão d
 
 ## Política de branches
 
-- `main`: base original; não é alterada diretamente.
-- `claude/projeto1`: desenvolvimento atual, criado a partir da `main`.
+- `main`: versão consolidada e fonte de verdade do projeto.
 - `dev`: tentativa anterior, mantida só como histórico. **Não é fonte de verdade** e não é usada.

@@ -17,8 +17,8 @@ Estados: **DECIDIDA** (vale desde já) · **PROVISÓRIA** (vale até a fase indi
 
 - **Problema:** uma tentativa anterior com outro agente deixou a branch `dev`.
 - **Alternativas:** (a) continuar da `dev`; (b) cherry-pick seletivo; (c) recomeçar da `main`.
-- **Decisão:** (c). Trabalho na branch `claude/projeto1`, criada a partir da `main`
-  (`fce8754`). Sem merge, sem cópia de arquivos, sem reaproveitar arquitetura ou decisões da `dev`.
+- **Decisão:** (c). Trabalho reiniciado a partir da `main` no commit `fce8754`.
+  Sem cópia de arquivos e sem reaproveitar arquitetura ou decisões da `dev`.
 - **Justificativa:** a `dev` não é fonte de verdade; queremos decisões que o grupo consiga defender.
 - **Impacto:** `dev` permanece no GitHub só como histórico. Se algo coincidir com ela, será por
   derivar das mesmas fontes (enunciado/aulas), não por cópia.

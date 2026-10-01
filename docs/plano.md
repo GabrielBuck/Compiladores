@@ -19,7 +19,7 @@ Toda afirmação de validação (compilou, teste passou) exige evidência de ter
 
 ## Fase A — Auditoria + requisitos  — CONCLUÍDA
 
-- Clonar do zero, criar `claude/projeto1` a partir de `main`, **sem** tocar na `dev`.
+- Clonar do zero e reiniciar o trabalho a partir de `main`, **sem** tocar na `dev`.
 - Registrar requisitos, escopo, decisões e ambiguidades.
 - **Saída:** `docs/requisitos.md`, `docs/especificacao-minivisualg.md`, `docs/decisoes.md`,
   `docs/plano.md`, `README.md`, `readme.txt`.

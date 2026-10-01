@@ -1,4 +1,4 @@
-# Plano de desenvolvimento
+# Plano e registro de desenvolvimento
 
 Cada fase só começa com autorização explícita do grupo. Não se pula fase.
 Toda afirmação de validação (compilou, teste passou) exige evidência de terminal real.

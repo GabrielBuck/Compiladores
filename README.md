@@ -8,7 +8,7 @@ Implementação, em **C**, das duas primeiras etapas do front-end de um compilad
 **MiniVisualg**, subconjunto simplificado do Visualg definido exclusivamente pelos exemplos do Anexo I
 do enunciado.
 
-## Estado atual
+## Estado consolidado
 
 **Fases A, A.1, B, C, D, E, F e G concluídas.** O `compilador.c` implementa o analisador léxico e o
 analisador sintático descendente recursivo preditivo LL(1), integrados sob demanda. A próxima fase é a
